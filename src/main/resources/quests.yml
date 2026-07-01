@@ -1,0 +1,59 @@
+quests:
+  # The quest ID (do NOT change this once the quest has started, otherwise it will break
+  weekly-1:
+    # General setting for this quest
+    settings:
+      # The duration of this quest before it refreshes
+      # Use the "s", "m", "h" and "d" suffixes for seconds, minutes, hours and days
+      # You can also stack multiples time units (for example: "3d 12h 30m 30s")
+      duration: 7d
+      # How many objectives should it randomly pick? (set it to the same number of objectives if you want all)
+      objectives-amount: 1
+    # Any of the options in this menu section can be removed if you don't want them
+    menu-options:
+      # The display name in the main menu
+      name: "&d&lWeekly Quest"
+      # The lore (valid placeholders: %current_<objective id>%, %amount_<objective id>%)
+      lore:
+        - ""
+        - "&7Complete this quest within the next week"
+        - "&7to earn amazing rewards!"
+        - ""
+        - "&dObjectives:"
+        - "&8- &fMine iron ore: %current_1%/%amount_1%"
+        - "&8- &fMine diamond ore: %current_2%/%amount_2%"
+        - ""
+        - "&dRewards:"
+        - "&8- &f25.000$"
+        - "&8- &f64x Diamonds"
+      # The display material
+      material: IRON_SWORD
+      # The custom model data
+      custom-model-data: 0
+      # Whether you want the item to glow or not
+      glow: false
+      # The item's flags (check the wiki for how to use this if you are not sure)
+      item-flags:
+      - HIDE_ATTRIBUTES
+    # You can add as many objectives as you want here
+    objectives:
+      # The objective ID (this can be whatever you want, but just don't change it once the quest is live)
+      1:
+        # The quest type (check the wiki for all the valid types)
+        type: BLOCK_BREAK
+        # The item target (in this case, people have to break iron ores)
+        target: IRON_ORE
+        # The amount for this objective to be completed
+        amount: 500
+      2:
+        type: BLOCK_BREAK
+        target: DIAMOND_ORE
+        amount: 100
+    # These have to be commands (without the /)
+    # Valid placeholders: %player%
+    rewards:
+      - "eco give %player% 25000"
+      - "give %player% diamond 64"
+
+# Do not touch this
+config-version: 1

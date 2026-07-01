@@ -1,0 +1,30 @@
+# Used to store the plugin data
+database:
+  # Valid types: SQLITE, H2, MYSQL, MARIADB
+  type: H2
+  # If you are not using MySQL or MariaDB this section is completely irrelevant
+  settings:
+    host: "localhost"
+    port: 3306
+    database: "server"
+    username: "root"
+    password: "password"
+    advanced:
+      max-pool-size: 10
+      min-idle: 10
+      connection-timeout: 10000
+      max-lifetime: 1800000
+
+# Should the plugin check/notify for new updates?
+# Requires a reboot
+check-for-updates: true
+
+# How you want the time left for each quest to be displayed
+# Valid options:
+# - SHORT: 2h 30m
+# - LONG: 2 Hours 30 Minutes
+# - CLOCK: 02:30
+time-display: SHORT
+
+# Do not touch this
+config-version: 1

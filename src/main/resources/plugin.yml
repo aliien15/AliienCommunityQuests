@@ -1,0 +1,6 @@
+name: AliienCommunityQuests
+version: '${version}'
+
+main: com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests
+api-version: '1.21'
+load: POSTWORLD
