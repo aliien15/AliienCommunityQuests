@@ -1,5 +1,6 @@
 package com.aliiensmp.aliienCommunityQuests.database.options;
 
+import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.database.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.database.DatabaseProvider;
 import com.aliiensmp.core.AliienCore;
@@ -9,6 +10,12 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class H2 implements DatabaseProvider {
+
+    private final AliienCommunityQuests plugin;
+
+    public H2(AliienCommunityQuests plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public void init() {
@@ -35,11 +42,6 @@ public class H2 implements DatabaseProvider {
         AliienCore.getDatabase().executeAsync(createActiveQuests);
         AliienCore.getDatabase().executeAsync(createParticipants);
         AliienCore.getDatabase().executeAsync(createRewards);
-    }
-
-    @Override
-    public void shutdown() {
-        // Handled by AliienCore
     }
 
     @Override
@@ -81,10 +83,9 @@ public class H2 implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Void> saveActiveQuest(String questId, int progress, Set<UUID> participants) {
-        String updateProgress = "INSERT INTO active_campaigns (quest_id, progress) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE progress = VALUES(progress);";
+        String updateProgress = "MERGE INTO active_campaigns (quest_id, progress) KEY(quest_id) VALUES (?, ?);";
 
-        String insertParticipant = "INSERT IGNORE INTO active_campaign_participants (quest_id, player_uuid) VALUES (?, ?);";
+        String insertParticipant = "MERGE INTO active_campaign_participants (quest_id, player_uuid) KEY(quest_id, player_uuid) VALUES (?, ?);";
 
         CompletableFuture<Boolean> progressFuture = AliienCore.getDatabase().executeAsync(updateProgress, questId, progress);
 
@@ -92,7 +93,7 @@ public class H2 implements DatabaseProvider {
                 .map(uuid -> AliienCore.getDatabase().executeAsync(insertParticipant, questId, uuid.toString()))
                 .toList();
 
-        ArrayList<CompletableFuture<?>> allFutures = new ArrayList<CompletableFuture<?>>();
+        ArrayList<CompletableFuture<?>> allFutures = new ArrayList<>();
         allFutures.add(progressFuture);
         allFutures.addAll(participantFutures);
 

@@ -19,6 +19,9 @@ database:
 # Requires a reboot
 check-for-updates: true
 
+# How often should in-memory quest progress be backed up to the database?
+backup-interval: 5m
+
 # How you want the time left for each quest to be displayed
 # Valid options:
 # - SHORT: 2h 30m

@@ -14,11 +14,6 @@ public interface DatabaseProvider {
     void init();
 
     /**
-     * Shutdown method
-     */
-    void shutdown();
-
-    /**
      * Pushes completed quest rewards to offline/online participants.
      *
      * @param participants The set of unique players who contributed.

@@ -9,6 +9,11 @@ quests:
       duration: 7d
       # How many objectives should it randomly pick? (set it to the same number of objectives if you want all)
       objectives-amount: 1
+      # How rewards will be displayed in the lore using the %active_objectives% list!
+      objective-format: "&8- &f%target%: %current%/%amount%"
+      # This number defines which quests will appear first when building the menu using the slots defined in the main-menu file
+      # The quests with the higher numbers will appear first
+      priority: 1
     # Any of the options in this menu section can be removed if you don't want them
     menu-options:
       # The display name in the main menu
@@ -20,8 +25,7 @@ quests:
         - "&7to earn amazing rewards!"
         - ""
         - "&dObjectives:"
-        - "&8- &fMine iron ore: %current_1%/%amount_1%"
-        - "&8- &fMine diamond ore: %current_2%/%amount_2%"
+        - "%active_objectives"
         - ""
         - "&dRewards:"
         - "&8- &f25.000$"
