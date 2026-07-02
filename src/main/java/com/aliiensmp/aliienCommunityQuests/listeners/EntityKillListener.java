@@ -10,12 +10,12 @@ import java.util.Optional;
 
 public class EntityKillListener extends AbstractQuestListener {
 
-    public EntityKillListener(AliienCommunityQuests plugin) {
+    public EntityKillListener(final AliienCommunityQuests plugin) {
         super(plugin);
     }
 
     @EventHandler
-    public void onEntityKill(EntityDeathEvent event) {
+    public void onEntityKill(final EntityDeathEvent event) {
         Player killer = event.getEntity().getKiller();
         Optional.ofNullable(killer)
                 .ifPresent(player -> handleProgress(

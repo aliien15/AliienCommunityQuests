@@ -13,7 +13,7 @@ public class H2 implements DatabaseProvider {
 
     private final AliienCommunityQuests plugin;
 
-    public H2(AliienCommunityQuests plugin) {
+    public H2(final AliienCommunityQuests plugin) {
         this.plugin = plugin;
     }
 
@@ -45,7 +45,7 @@ public class H2 implements DatabaseProvider {
     }
 
     @Override
-    public CompletableFuture<List<String>> getPendingRewards(UUID playerUuid) {
+    public CompletableFuture<List<String>> getPendingRewards(final UUID playerUuid) {
         String query = "SELECT reward_id FROM unclaimed_rewards WHERE player_uuid = ?;";
 
         return AliienCore.getDatabase().queryAsync(query, rs -> {
@@ -64,7 +64,7 @@ public class H2 implements DatabaseProvider {
     }
 
     @Override
-    public CompletableFuture<Void> grantRewards(Set<UUID> participants, String rewardId) {
+    public CompletableFuture<Void> grantRewards(final Set<UUID> participants, final String rewardId) {
         String query = "INSERT INTO unclaimed_rewards (player_uuid, reward_id) VALUES (?, ?);";
 
         List<CompletableFuture<Boolean>> futures = participants.stream()
@@ -75,14 +75,14 @@ public class H2 implements DatabaseProvider {
     }
 
     @Override
-    public CompletableFuture<Boolean> clearPendingRewards(UUID playerUuid) {
+    public CompletableFuture<Boolean> clearPendingRewards(final UUID playerUuid) {
         String query = "DELETE FROM unclaimed_rewards WHERE player_uuid = ?;";
 
         return AliienCore.getDatabase().executeAsync(query, playerUuid.toString());
     }
 
     @Override
-    public CompletableFuture<Void> saveActiveQuest(String questId, int progress, Set<UUID> participants) {
+    public CompletableFuture<Void> saveActiveQuest(final String questId, final int progress, final Set<UUID> participants) {
         String updateProgress = "MERGE INTO active_campaigns (quest_id, progress) KEY(quest_id) VALUES (?, ?);";
 
         String insertParticipant = "MERGE INTO active_campaign_participants (quest_id, player_uuid) KEY(quest_id, player_uuid) VALUES (?, ?);";
@@ -130,7 +130,7 @@ public class H2 implements DatabaseProvider {
     }
 
     @Override
-    public CompletableFuture<Boolean> clearActiveQuestBackup(String questId) {
+    public CompletableFuture<Boolean> clearActiveQuestBackup(final String questId) {
         String deleteProgress = "DELETE FROM active_campaigns WHERE quest_id = ?;";
         String deleteParticipants = "DELETE FROM active_campaign_participants WHERE quest_id = ?;";
 

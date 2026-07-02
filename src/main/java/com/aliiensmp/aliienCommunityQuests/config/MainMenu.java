@@ -30,18 +30,18 @@ public class MainMenu {
 
         Optional.ofNullable(config.getSection("items")).ifPresent(itemsSection -> {
             itemsSection.getRoutesAsStrings(false).forEach(itemId -> {
-                Section iSec = itemsSection.getSection(itemId);
+                final Section iSec = itemsSection.getSection(itemId);
                 if (iSec == null) return;
 
                 // Parse Menu Options
-                MenuAction action = MenuAction.valueOf(iSec.getString("action", "NONE"));
-                Material material = Material.valueOf(iSec.getString("material", "STONE"));
-                List<Integer> slots = iSec.getIntList("slots", List.of());
-                String name = iSec.getString("name");
-                List<String> lore = iSec.getStringList("lore");
-                int customModelData = iSec.getInt("custom-model-data", 0);
-                boolean glow = iSec.getBoolean("glow", false);
-                List<ItemFlag> flags = iSec.getStringList("item-flags").stream()
+                final MenuAction action = MenuAction.valueOf(iSec.getString("action", "NONE"));
+                final Material material = Material.valueOf(iSec.getString("material", "STONE"));
+                final List<Integer> slots = iSec.getIntList("slots", List.of());
+                final String name = iSec.getString("name");
+                final List<String> lore = iSec.getStringList("lore");
+                final int customModelData = iSec.getInt("custom-model-data", 0);
+                final boolean glow = iSec.getBoolean("glow", false);
+                final List<ItemFlag> flags = iSec.getStringList("item-flags").stream()
                         .map(ItemFlag::valueOf)
                         .toList();
 

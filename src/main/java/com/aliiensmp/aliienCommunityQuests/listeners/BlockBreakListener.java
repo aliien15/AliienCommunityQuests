@@ -7,12 +7,12 @@ import org.bukkit.event.block.BlockBreakEvent;
 
 public class BlockBreakListener extends AbstractQuestListener {
 
-    public BlockBreakListener(AliienCommunityQuests plugin) {
+    public BlockBreakListener(final AliienCommunityQuests plugin) {
         super(plugin);
     }
 
     @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
+    public void onBlockBreak(final BlockBreakEvent event) {
         handleProgress(
                 event.getPlayer().getUniqueId(),
                 ObjectiveType.BLOCK_BREAK,

@@ -20,7 +20,7 @@ public interface DatabaseProvider {
      * @param rewardId The configuration key for the reward item.
      * @return A future completing when the batch insert finishes.
      */
-    CompletableFuture<Void> grantRewards(Set<UUID> participants, String rewardId);
+    CompletableFuture<Void> grantRewards(final Set<UUID> participants, final String rewardId);
 
     /**
      * Retrieves all unredeemed rewards for a player when they open the GUI hub.
@@ -28,7 +28,7 @@ public interface DatabaseProvider {
      * @param playerUuid The UUID of the player checking their stash.
      * @return A list of configuration keys representing their pending rewards.
      */
-    CompletableFuture<List<String>> getPendingRewards(UUID playerUuid);
+    CompletableFuture<List<String>> getPendingRewards(final UUID playerUuid);
 
     /**
      * Wipes a player's pending rewards from the database after a successful claim.
@@ -36,7 +36,7 @@ public interface DatabaseProvider {
      * @param playerUuid The UUID of the player who claimed their stash.
      * @return True if the deletion was successful, false otherwise.
      */
-    CompletableFuture<Boolean> clearPendingRewards(UUID playerUuid);
+    CompletableFuture<Boolean> clearPendingRewards(final UUID playerUuid);
 
     /**
      * Backs up the current server-wide progress on a timed interval.
@@ -46,7 +46,7 @@ public interface DatabaseProvider {
      * @param participants The set of UUIDs currently contributing.
      * @return A future completing when the backup is safely stored.
      */
-    CompletableFuture<Void> saveActiveQuest(String questId, int progress, Set<UUID> participants);
+    CompletableFuture<Void> saveActiveQuest(final String questId, final int progress, final Set<UUID> participants);
 
     /**
      * Fetches all in-progress quests and their contributors upon server startup.
@@ -61,5 +61,5 @@ public interface DatabaseProvider {
      * @param questId The ID of the campaign that just reached 100%.
      * @return True if the deletion was successful, false otherwise.
      */
-    CompletableFuture<Boolean> clearActiveQuestBackup(String questId);
+    CompletableFuture<Boolean> clearActiveQuestBackup(final String questId);
 }

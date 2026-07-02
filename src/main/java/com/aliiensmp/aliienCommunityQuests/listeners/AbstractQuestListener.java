@@ -16,8 +16,19 @@ public abstract class AbstractQuestListener implements Listener {
 
     protected final AliienCommunityQuests plugin;
 
-    public AbstractQuestListener(AliienCommunityQuests plugin) {
+    public AbstractQuestListener(final AliienCommunityQuests plugin) {
         this.plugin = plugin;
+    }
+
+    /**
+     * Provesses progress for any active community quest by incrementing the progress in 1 unit.
+     *
+     * @param playerUUID The UUID of the player contributing.
+     * @param type The type of objective being completed.
+     * @param target The target string (e.g., Block name, Entity name).
+     */
+    protected void handleProgress(final UUID playerUUID, final ObjectiveType type, final String target) {
+        handleProgress(playerUUID, type, target, 1);
     }
 
     /**
@@ -26,8 +37,9 @@ public abstract class AbstractQuestListener implements Listener {
      * @param playerUUID The UUID of the player contributing.
      * @param type The type of objective being completed.
      * @param target The target string (e.g., Block name, Entity name).
+     * @param amount the amount to increment the current progress by.
      */
-    protected void handleProgress(UUID playerUUID, ObjectiveType type, String target) {
+    protected void handleProgress(final UUID playerUUID, final ObjectiveType type, final String target, final int amount) {
         ACTIVE_QUESTS.forEach((questId, state) -> {
             Quests.QUEST_LIST.stream()
                     .filter(q -> q.id().equals(questId))
@@ -39,7 +51,7 @@ public abstract class AbstractQuestListener implements Listener {
                                 .findFirst()
                                 .ifPresent(objective -> {
 
-                                    int newProgress = state.progress() + 1;
+                                    final int newProgress = state.progress() + amount;
                                     state.participants().add(playerUUID);
 
                                     if (newProgress >= objective.amount()) {

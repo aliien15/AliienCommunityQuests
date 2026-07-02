@@ -8,12 +8,12 @@ import org.bukkit.event.player.PlayerFishEvent;
 
 public class PlayerFishListener extends AbstractQuestListener {
 
-    public PlayerFishListener(AliienCommunityQuests plugin) {
+    public PlayerFishListener(final AliienCommunityQuests plugin) {
         super(plugin);
     }
 
     @EventHandler
-    public void onPlayerFish(PlayerFishEvent event) {
+    public void onPlayerFish(final PlayerFishEvent event) {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
 
         if (event.getCaught() instanceof Item caughtItem) {

@@ -14,7 +14,7 @@ public class QuestManager {
 
     public static Map<String, ActiveQuestState> ACTIVE_QUESTS = new ConcurrentHashMap<>();
 
-    public QuestManager(AliienCommunityQuests plugin) {
+    public QuestManager(final AliienCommunityQuests plugin) {
         this.plugin = plugin;
 
         plugin.getDatabaseProvider().loadActiveCache().thenAccept(cache -> {

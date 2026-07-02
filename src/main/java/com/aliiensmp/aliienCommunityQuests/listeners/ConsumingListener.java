@@ -3,19 +3,19 @@ package com.aliiensmp.aliienCommunityQuests.listeners;
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
 
-public class EnchantingListener extends AbstractQuestListener {
+public class ConsumingListener extends AbstractQuestListener {
 
-    public EnchantingListener(final AliienCommunityQuests plugin) {
+    public ConsumingListener(final AliienCommunityQuests plugin) {
         super(plugin);
     }
 
     @EventHandler
-    public void onEnchant(final EnchantItemEvent event) {
+    public void onConsuming(final PlayerItemConsumeEvent event) {
         handleProgress(
-                event.getEnchanter().getUniqueId(),
-                ObjectiveType.ENCHANTING,
+                event.getPlayer().getUniqueId(),
+                ObjectiveType.CONSUMING,
                 event.getItem().getType().name()
         );
     }
