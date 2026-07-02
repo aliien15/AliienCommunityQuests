@@ -1,8 +1,10 @@
 package com.aliiensmp.aliienCommunityQuests.config.records;
 
+import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
+
 public record Objective(
         String id,
-        String type,
+        ObjectiveType type,
         String target,
         int amount
 ) {

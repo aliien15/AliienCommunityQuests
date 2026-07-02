@@ -1,0 +1,59 @@
+package com.aliiensmp.aliienCommunityQuests.listeners;
+
+import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
+import com.aliiensmp.aliienCommunityQuests.config.Messages;
+import com.aliiensmp.aliienCommunityQuests.config.Quests;
+import com.aliiensmp.aliienCommunityQuests.database.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
+import com.aliiensmp.core.utils.MessageUtils;
+import org.bukkit.event.Listener;
+
+import java.util.UUID;
+
+import static com.aliiensmp.aliienCommunityQuests.manager.QuestManager.ACTIVE_QUESTS;
+
+public abstract class AbstractQuestListener implements Listener {
+
+    protected final AliienCommunityQuests plugin;
+
+    public AbstractQuestListener(AliienCommunityQuests plugin) {
+        this.plugin = plugin;
+    }
+
+    /**
+     * Processes progress for any active community quest.
+     *
+     * @param playerUUID The UUID of the player contributing.
+     * @param type The type of objective being completed.
+     * @param target The target string (e.g., Block name, Entity name).
+     */
+    protected void handleProgress(UUID playerUUID, ObjectiveType type, String target) {
+        ACTIVE_QUESTS.forEach((questId, state) -> {
+            Quests.QUEST_LIST.stream()
+                    .filter(q -> q.id().equals(questId))
+                    .findFirst()
+                    .ifPresent(questConfig -> {
+                        questConfig.objectives().stream()
+                                .filter(obj -> obj.type() == type)
+                                .filter(obj -> obj.target().equals(target))
+                                .findFirst()
+                                .ifPresent(objective -> {
+
+                                    int newProgress = state.progress() + 1;
+                                    state.participants().add(playerUUID);
+
+                                    if (newProgress >= objective.amount()) {
+                                        ACTIVE_QUESTS.remove(questId);
+                                        plugin.getDatabaseProvider().clearActiveQuestBackup(questId);
+                                        questConfig.rewards().forEach(reward -> {
+                                            plugin.getDatabaseProvider().grantRewards(state.participants(), reward);
+                                        });
+                                        MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_COMPLETED);
+                                    } else {
+                                        ACTIVE_QUESTS.put(questId, new ActiveQuestState(newProgress, state.participants()));
+                                    }
+                                });
+                    });
+        });
+    }
+}

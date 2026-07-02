@@ -32,6 +32,7 @@ public final class AliienCommunityQuests extends JavaPlugin {
         AliienCore.init(this);
 
         if (!loadConfig()) {
+            getLogger().log(Level.SEVERE, "Failed to load configurations!");
             getServer().getPluginManager().disablePlugin(this);
         }
 

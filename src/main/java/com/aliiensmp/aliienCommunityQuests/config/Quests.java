@@ -2,6 +2,7 @@ package com.aliiensmp.aliienCommunityQuests.config;
 
 import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
+import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
 import com.aliiensmp.core.lib.boostedyaml.block.implementation.Section;
 import org.bukkit.Material;
@@ -45,7 +46,7 @@ public class Quests {
                     objSec.getRoutesAsStrings(false).forEach(objId -> {
                         objectives.add(new Objective(
                                 objId,
-                                objSec.getString(objId + ".type"),
+                                ObjectiveType.valueOf(objSec.getString(objId + ".type")),
                                 objSec.getString(objId + ".target"),
                                 objSec.getInt(objId + ".amount")
                         ));
