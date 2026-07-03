@@ -134,7 +134,7 @@ public class Menu {
                 .limit(questSlotsPerPage)
                 .toList();
 
-        IntStream.range(0, pagedQuests.size()).forEach(idx -> {
+        for (int idx = 0; idx < pagedQuests.size(); idx++) {
             final int slot = MainMenu.QUEST_SLOTS.get(idx);
             final Map.Entry<String, ActiveQuestState> entry = pagedQuests.get(idx);
 
@@ -144,11 +144,11 @@ public class Menu {
                     .orElse(null);
 
             // Realistically, this is only true when a quest is removed from the config while it is active
-            if (questData == null) return;
+            if (questData == null) continue;
 
             ItemStack questItem = createQuestItem(questData, entry.getValue());
             menu.setItem(slot, ClickableItem.empty(questItem));
-        });
+        }
     }
 
     /**
@@ -177,7 +177,7 @@ public class Menu {
 
                     // Handle the regular ID-based placeholders
                     String parsedLine = line;
-                    for (Objective obj : questData.objectives()) {
+                    for (final Objective obj : questData.objectives()) {
                         parsedLine = parsedLine
                                 .replace("%current_" + obj.id() + "%", String.valueOf(state.progress()))
                                 .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()));
