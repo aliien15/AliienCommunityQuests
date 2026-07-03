@@ -1,13 +1,14 @@
 package com.aliiensmp.aliienCommunityQuests.database.options;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
-import com.aliiensmp.aliienCommunityQuests.database.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.database.DatabaseProvider;
 import com.aliiensmp.core.AliienCore;
 
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SQLite implements DatabaseProvider {
 
@@ -83,10 +84,10 @@ public class SQLite implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Void> saveActiveQuest(final String questId, final int progress, final Set<UUID> participants) {
-        String updateProgress = "INSERT INTO active_campaigns (quest_id, progress) VALUES (?, ?) " +
+        String updateProgress = "INSERT INTO active_quests (quest_id, progress) VALUES (?, ?) " +
                 "ON CONFLICT(quest_id) DO UPDATE SET progress = excluded.progress;";
 
-        String insertParticipant = "INSERT OR IGNORE INTO active_campaign_participants (quest_id, player_uuid) VALUES (?, ?);";
+        String insertParticipant = "INSERT OR IGNORE INTO active_quest_participants (quest_id, player_uuid) VALUES (?, ?);";
 
         CompletableFuture<Boolean> progressFuture = AliienCore.getDatabase().executeAsync(updateProgress, questId, progress);
 
@@ -104,11 +105,11 @@ public class SQLite implements DatabaseProvider {
     @Override
     public CompletableFuture<Map<String, ActiveQuestState>> loadActiveCache() {
         String query = "SELECT c.quest_id, c.progress, p.player_uuid " +
-                "FROM active_campaigns c " +
-                "LEFT JOIN active_campaign_participants p ON c.quest_id = p.quest_id;";
+                "FROM active_quests c " +
+                "LEFT JOIN active_quest_participants p ON c.quest_id = p.quest_id;";
 
         return AliienCore.getDatabase().queryAsync(query, rs -> {
-            Map<String, ActiveQuestState> cache = new java.util.concurrent.ConcurrentHashMap<>();
+            Map<String, ActiveQuestState> cache = new ConcurrentHashMap<>();
 
             try {
                 while (rs.next()) {
@@ -116,13 +117,13 @@ public class SQLite implements DatabaseProvider {
                     int progress = rs.getInt("progress");
                     String uuidString = rs.getString("player_uuid");
 
-                    cache.computeIfAbsent(questId, k -> new ActiveQuestState(progress, java.util.concurrent.ConcurrentHashMap.newKeySet()));
+                    cache.computeIfAbsent(questId, k -> new ActiveQuestState(progress, ConcurrentHashMap.newKeySet()));
 
-                    java.util.Optional.ofNullable(uuidString).ifPresent(uuid ->
+                    Optional.ofNullable(uuidString).ifPresent(uuid ->
                             cache.get(questId).participants().add(UUID.fromString(uuid))
                     );
                 }
-            } catch (java.sql.SQLException e) {
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
 
@@ -132,8 +133,8 @@ public class SQLite implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Boolean> clearActiveQuestBackup(final String questId) {
-        String deleteProgress = "DELETE FROM active_campaigns WHERE quest_id = ?;";
-        String deleteParticipants = "DELETE FROM active_campaign_participants WHERE quest_id = ?;";
+        String deleteProgress = "DELETE FROM active_quests WHERE quest_id = ?;";
+        String deleteParticipants = "DELETE FROM active_quest_participants WHERE quest_id = ?;";
 
         CompletableFuture<Boolean> progressFuture = AliienCore.getDatabase().executeAsync(deleteProgress, questId);
         CompletableFuture<Boolean> participantsFuture = AliienCore.getDatabase().executeAsync(deleteParticipants, questId);

@@ -14,39 +14,39 @@ items:
   # Any of these options can be removed if you don't want them (except for the slots/action)
   previous-page:
     # Valid actions: PREVIOUS_PAGE, NEXT_PAGE, NONE, REWARDS
-    action: PREVIOUS_PAGE
+    action: PREVIOUS_PAGE # Valid placeholders: %target_page%
     material: ARROW
     slots: [18]
     name: "<#ffb347><b>« Previous Page</b>"
     lore:
       - "&7Click to go to the"
-      - "&previosu page (%target_page)"
+      - "&previosu page (%target_page%)"
     custom-model-data: 0
     glow: false
     item-flags:
       - HIDE_ATTRIBUTES
 
   next-page:
-    action: NEXT_PAGE
+    action: NEXT_PAGE # Valid placeholders: %target_page%
     material: ARROW
     slots: [26]
     name: "<#ffb347><b>Next Page »</b>"
     lore:
       - "&7Click to go to the"
-      - "&7next page (%target_page)"
+      - "&7next page (%target_page%)"
     custom-model-data: 0
     glow: false
     item-flags:
       - HIDE_ATTRIBUTES
 
   loot-stash:
-    action: REWARDS
+    action: REWARDS # Valid placeholders: %pending_rewards%
     material: CHEST_MINECART
     slots: [22]
     name: "&6&lLoot Stash"
     lore:
       - "&7Click to claim your pending"
-      - "&7community quest rewards!"
+      - "&7community quest rewards (%pending_rewards%)"
     custom-model-data: 0
     glow: true
     item-flags:

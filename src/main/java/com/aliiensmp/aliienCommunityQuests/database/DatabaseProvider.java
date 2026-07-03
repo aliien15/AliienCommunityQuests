@@ -1,5 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.database;
 
+import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +60,7 @@ public interface DatabaseProvider {
     /**
      * Wipes a completed quest from the backup tables so it is not reloaded on reboot.
      *
-     * @param questId The ID of the campaign that just reached 100%.
+     * @param questId The ID of the quest that just reached 100%.
      * @return True if the deletion was successful, false otherwise.
      */
     CompletableFuture<Boolean> clearActiveQuestBackup(final String questId);

@@ -1,7 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.config;
 
 import com.aliiensmp.aliienCommunityQuests.config.records.MenuItem;
-import com.aliiensmp.aliienCommunityQuests.menu.MenuAction;
+import com.aliiensmp.aliienCommunityQuests.enums.MenuAction;
 import com.aliiensmp.core.config.Key;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
 import com.aliiensmp.core.lib.boostedyaml.block.implementation.Section;
@@ -25,6 +25,12 @@ public class MainMenu {
     
     public static final List<MenuItem> ITEMS_LIST = new ArrayList<>();
 
+    /**
+     * Loads all the menu items into the {@code ITEMS_LIST} so it can be rapidly used
+     * when we have to open the menu for players.
+     *
+     * @param config the yml config file where we can find the menu items
+     */
     public static void load(YamlDocument config) {
         ITEMS_LIST.clear();
 

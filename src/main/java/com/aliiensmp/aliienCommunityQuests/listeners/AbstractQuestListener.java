@@ -3,7 +3,7 @@ package com.aliiensmp.aliienCommunityQuests.listeners;
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.config.Quests;
-import com.aliiensmp.aliienCommunityQuests.database.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.core.utils.MessageUtils;
 import org.bukkit.event.Listener;

@@ -2,7 +2,7 @@ package com.aliiensmp.aliienCommunityQuests.manager;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.config.Settings;
-import com.aliiensmp.aliienCommunityQuests.database.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
 import com.aliiensmp.core.utils.DurationUtils;
 
 import java.util.Map;

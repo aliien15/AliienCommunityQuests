@@ -1,6 +1,6 @@
 package com.aliiensmp.aliienCommunityQuests.config.records;
 
-import com.aliiensmp.aliienCommunityQuests.menu.MenuAction;
+import com.aliiensmp.aliienCommunityQuests.enums.MenuAction;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 

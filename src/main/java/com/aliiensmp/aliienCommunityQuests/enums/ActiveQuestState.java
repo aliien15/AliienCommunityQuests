@@ -1,4 +1,4 @@
-package com.aliiensmp.aliienCommunityQuests.database;
+package com.aliiensmp.aliienCommunityQuests.enums;
 
 import java.util.Set;
 import java.util.UUID;
