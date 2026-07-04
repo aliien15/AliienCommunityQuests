@@ -1,6 +1,6 @@
 package com.aliiensmp.aliienCommunityQuests.database.options;
 
-import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.database.DatabaseProvider;
 import com.aliiensmp.core.AliienCore;
 
@@ -13,10 +13,12 @@ public class MariaDB implements DatabaseProvider {
 
     @Override
     public void init() {
-        String createActiveQuests = """
-            CREATE TABLE IF NOT EXISTS active_quests (
-                quest_id VARCHAR(255) PRIMARY KEY,
-                progress INT NOT NULL
+        String createObjectives = """
+            CREATE TABLE IF NOT EXISTS active_quest_objectives (
+                quest_id VARCHAR(255) NOT NULL,
+                objective_id VARCHAR(255) NOT NULL,
+                progress INT NOT NULL,
+                PRIMARY KEY (quest_id, objective_id)
             );""";
 
         String createParticipants = """
@@ -33,7 +35,7 @@ public class MariaDB implements DatabaseProvider {
                 INDEX(player_uuid)
             );""";
 
-        AliienCore.getDatabase().executeAsync(createActiveQuests);
+        AliienCore.getDatabase().executeAsync(createObjectives);
         AliienCore.getDatabase().executeAsync(createParticipants);
         AliienCore.getDatabase().executeAsync(createRewards);
     }
@@ -44,15 +46,11 @@ public class MariaDB implements DatabaseProvider {
 
         return AliienCore.getDatabase().queryAsync(query, rs -> {
             List<String> rewards = new ArrayList<>();
-
             try {
-                while (rs.next()) {
-                    rewards.add(rs.getString("reward_id"));
-                }
+                while (rs.next()) rewards.add(rs.getString("reward_id"));
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-
             return rewards;
         }, playerUuid.toString());
     }
@@ -71,35 +69,34 @@ public class MariaDB implements DatabaseProvider {
     @Override
     public CompletableFuture<Boolean> clearPendingRewards(final UUID playerUuid) {
         String query = "DELETE FROM unclaimed_rewards WHERE player_uuid = ?;";
-
         return AliienCore.getDatabase().executeAsync(query, playerUuid.toString());
     }
 
     @Override
-    public CompletableFuture<Void> saveActiveQuest(final String questId, final int progress, final Set<UUID> participants) {
-        String updateProgress = "INSERT INTO active_quests (quest_id, progress) VALUES (?, ?) " +
+    public CompletableFuture<Void> saveActiveQuest(final String questId, final Map<String, Integer> objectiveProgress, final Set<UUID> participants) {
+        String updateProgress = "INSERT INTO active_quest_objectives (quest_id, objective_id, progress) VALUES (?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE progress = VALUES(progress);";
 
         String insertParticipant = "INSERT IGNORE INTO active_quest_participants (quest_id, player_uuid) VALUES (?, ?);";
 
-        CompletableFuture<Boolean> progressFuture = AliienCore.getDatabase().executeAsync(updateProgress, questId, progress);
+        ArrayList<CompletableFuture<?>> allFutures = new ArrayList<>();
 
-        List<CompletableFuture<Boolean>> participantFutures = participants.stream()
-                .map(uuid -> AliienCore.getDatabase().executeAsync(insertParticipant, questId, uuid.toString()))
-                .toList();
+        objectiveProgress.forEach((objId, progress) -> {
+            allFutures.add(AliienCore.getDatabase().executeAsync(updateProgress, questId, objId, progress));
+        });
 
-        ArrayList<CompletableFuture<?>> allFutures = new ArrayList<CompletableFuture<?>>();
-        allFutures.add(progressFuture);
-        allFutures.addAll(participantFutures);
+        participants.forEach(uuid -> {
+            allFutures.add(AliienCore.getDatabase().executeAsync(insertParticipant, questId, uuid.toString()));
+        });
 
         return CompletableFuture.allOf(allFutures.toArray(new CompletableFuture[0]));
     }
 
     @Override
     public CompletableFuture<Map<String, ActiveQuestState>> loadActiveCache() {
-        String query = "SELECT c.quest_id, c.progress, p.player_uuid " +
-                "FROM active_quests c " +
-                "LEFT JOIN active_quest_participants p ON c.quest_id = p.quest_id;";
+        String query = "SELECT o.quest_id, o.objective_id, o.progress, p.player_uuid " +
+                "FROM active_quest_objectives o " +
+                "LEFT JOIN active_quest_participants p ON o.quest_id = p.quest_id;";
 
         return AliienCore.getDatabase().queryAsync(query, rs -> {
             Map<String, ActiveQuestState> cache = new ConcurrentHashMap<>();
@@ -107,10 +104,13 @@ public class MariaDB implements DatabaseProvider {
             try {
                 while (rs.next()) {
                     String questId = rs.getString("quest_id");
+                    String objectiveId = rs.getString("objective_id");
                     int progress = rs.getInt("progress");
                     String uuidString = rs.getString("player_uuid");
 
-                    cache.computeIfAbsent(questId, k -> new ActiveQuestState(progress, ConcurrentHashMap.newKeySet()));
+                    cache.computeIfAbsent(questId, k -> new ActiveQuestState(new ConcurrentHashMap<>(), ConcurrentHashMap.newKeySet()));
+
+                    cache.get(questId).objectiveProgress().put(objectiveId, progress);
 
                     Optional.ofNullable(uuidString).ifPresent(uuid ->
                             cache.get(questId).participants().add(UUID.fromString(uuid))
@@ -126,14 +126,12 @@ public class MariaDB implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Boolean> clearActiveQuestBackup(final String questId) {
-        String deleteProgress = "DELETE FROM active_quests WHERE quest_id = ?;";
+        String deleteProgress = "DELETE FROM active_quest_objectives WHERE quest_id = ?;";
         String deleteParticipants = "DELETE FROM active_quest_participants WHERE quest_id = ?;";
 
         CompletableFuture<Boolean> progressFuture = AliienCore.getDatabase().executeAsync(deleteProgress, questId);
         CompletableFuture<Boolean> participantsFuture = AliienCore.getDatabase().executeAsync(deleteParticipants, questId);
 
-        return progressFuture.thenCombine(participantsFuture, (progressDeleted, participantsDeleted) ->
-                progressDeleted && participantsDeleted
-        );
+        return progressFuture.thenCombine(participantsFuture, (progressDeleted, participantsDeleted) -> progressDeleted && participantsDeleted);
     }
 }

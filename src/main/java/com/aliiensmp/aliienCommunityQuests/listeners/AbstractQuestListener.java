@@ -5,7 +5,7 @@ import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.config.Quests;
 import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
-import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.core.utils.MessageUtils;
 import org.bukkit.event.Listener;

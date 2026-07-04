@@ -2,7 +2,7 @@ package com.aliiensmp.aliienCommunityQuests.manager;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.config.Settings;
-import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.core.utils.DurationUtils;
 
 import java.util.Map;
@@ -26,16 +26,19 @@ public class QuestManager {
     }
 
     /**
-     * Backs up all the data from the active quests to the database
+     * Backs up all the data from the active quests to the database at fixed intervals.
      */
     private void startBackupTask() {
         plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task -> {
-            ACTIVE_QUESTS.keySet().forEach(questId -> {
+
+            ACTIVE_QUESTS.forEach((questId, state) -> {
                 plugin.getDatabaseProvider().saveActiveQuest(
                         questId,
-                        ACTIVE_QUESTS.get(questId).progress(),
-                        ACTIVE_QUESTS.get(questId).participants());
+                        state.objectiveProgress(),
+                        state.participants()
+                );
             });
+
         }, 20L, DurationUtils.toTicks(Settings.BACKUP_INTERVAL));
     }
 }

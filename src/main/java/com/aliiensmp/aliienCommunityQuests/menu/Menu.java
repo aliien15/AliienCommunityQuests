@@ -7,7 +7,7 @@ import com.aliiensmp.aliienCommunityQuests.config.Quests;
 import com.aliiensmp.aliienCommunityQuests.config.records.MenuItem;
 import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
-import com.aliiensmp.aliienCommunityQuests.enums.ActiveQuestState;
+import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.enums.MenuAction;
 import com.aliiensmp.aliienCommunityQuests.manager.QuestManager;
 import com.aliiensmp.core.items.ItemBuilder;
@@ -20,7 +20,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class Menu {
@@ -170,7 +170,7 @@ public class Menu {
                         return questData.objectives().stream().map(objective ->
                                 questData.objectiveFormat()
                                         .replace("%target%", objective.target())
-                                        .replace("%current%", String.valueOf(state.progress()))
+                                        .replace("%current%", String.valueOf(state.objectiveProgress().getOrDefault(objective.id(), 0)))
                                         .replace("%amount%", String.valueOf(objective.amount()))
                         );
                     }
@@ -179,7 +179,7 @@ public class Menu {
                     String parsedLine = line;
                     for (final Objective obj : questData.objectives()) {
                         parsedLine = parsedLine
-                                .replace("%current_" + obj.id() + "%", String.valueOf(state.progress()))
+                                .replace("%current_" + obj.id() + "%", String.valueOf(state.objectiveProgress().getOrDefault(obj.id(), 0)))
                                 .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()));
                     }
 
@@ -243,7 +243,7 @@ public class Menu {
                 });
 
                 MessageUtils.send(player, Messages.PREFIX, Messages.REWARDS_CLAIMED);
-                plugin.getDatabaseProvider().clearPendingRewards(player.getUniqueId());
+                CompletableFuture.runAsync(() -> plugin.getDatabaseProvider().clearPendingRewards(player.getUniqueId()));
             }, null);
 
         }).exceptionally(ex -> {
