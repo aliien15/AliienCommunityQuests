@@ -73,10 +73,37 @@ public abstract class AbstractQuestListener implements Listener {
             final Objective finalTargetObjective = targetObjective;
 
             ACTIVE_QUESTS.computeIfPresent(questId, (id, state) -> {
-                final int newProgress = state.progress() + amount;
+
+                // Get the current progress for this specific objective
+                final int currentObjProgress = state.objectiveProgress().getOrDefault(finalTargetObjective.id(), 0);
+                final int newProgress = currentObjProgress + amount;
+
+                // Update the specific objective's progress
+                state.objectiveProgress().put(finalTargetObjective.id(), newProgress);
                 state.participants().add(playerUUID);
 
-                if (newProgress >= finalTargetObjective.amount()) {
+                // Verify if all active objectives for this quest are completed
+                boolean allCompleted = true;
+                for (final String activeObjId : state.objectiveProgress().keySet()) {
+
+                    // Find the required amount for the objective we are checking
+                    int requiredAmount = 0;
+                    for (final Objective o : finalQuest.objectives()) {
+                        if (o.id().equals(activeObjId)) {
+                            requiredAmount = o.amount();
+                            break;
+                        }
+                    }
+
+                    // Check if this objective is completed
+                    if (state.objectiveProgress().get(activeObjId) < requiredAmount) {
+                        allCompleted = false;
+                        break;
+                    }
+                }
+
+                // Hand out the loot if everything is done
+                if (allCompleted) {
                     MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_COMPLETED);
 
                     CompletableFuture.runAsync(() -> {
@@ -89,7 +116,8 @@ public abstract class AbstractQuestListener implements Listener {
                     return null;
                 }
 
-                return new ActiveQuestState(newProgress, state.participants());
+                // If not done, return the updated state
+                return new ActiveQuestState(state.objectiveProgress(), state.participants(), state.endTime());
             });
         }
     }

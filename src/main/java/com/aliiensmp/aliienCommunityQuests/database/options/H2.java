@@ -25,6 +25,7 @@ public class H2 implements DatabaseProvider {
                 quest_id VARCHAR(255) NOT NULL,
                 objective_id VARCHAR(255) NOT NULL,
                 progress INT NOT NULL,
+                end_time BIGINT NOT NULL,
                 PRIMARY KEY (quest_id, objective_id)
             );""";
 
@@ -80,14 +81,14 @@ public class H2 implements DatabaseProvider {
     }
 
     @Override
-    public CompletableFuture<Void> saveActiveQuest(final String questId, final Map<String, Integer> objectiveProgress, final Set<UUID> participants) {
-        String updateProgress = "MERGE INTO active_quest_objectives (quest_id, objective_id, progress) KEY(quest_id, objective_id) VALUES (?, ?, ?);";
+    public CompletableFuture<Void> saveActiveQuest(final String questId, final Map<String, Integer> objectiveProgress, final Set<UUID> participants, final long endTime) {
+        String updateProgress = "MERGE INTO active_quest_objectives (quest_id, objective_id, progress, end_time) KEY(quest_id, objective_id) VALUES (?, ?, ?, ?);";
         String insertParticipant = "MERGE INTO active_quest_participants (quest_id, player_uuid) KEY(quest_id, player_uuid) VALUES (?, ?);";
 
         ArrayList<CompletableFuture<?>> allFutures = new ArrayList<>();
 
         objectiveProgress.forEach((objId, progress) -> {
-            allFutures.add(AliienCore.getDatabase().executeAsync(updateProgress, questId, objId, progress));
+            allFutures.add(AliienCore.getDatabase().executeAsync(updateProgress, questId, objId, progress, endTime));
         });
 
         participants.forEach(uuid -> {
@@ -99,7 +100,7 @@ public class H2 implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Map<String, ActiveQuestState>> loadActiveCache() {
-        String query = "SELECT o.quest_id, o.objective_id, o.progress, p.player_uuid " +
+        String query = "SELECT o.quest_id, o.objective_id, o.progress, o.end_time, p.player_uuid " +
                 "FROM active_quest_objectives o " +
                 "LEFT JOIN active_quest_participants p ON o.quest_id = p.quest_id;";
 
@@ -111,9 +112,10 @@ public class H2 implements DatabaseProvider {
                     String questId = rs.getString("quest_id");
                     String objectiveId = rs.getString("objective_id");
                     int progress = rs.getInt("progress");
+                    long endTime = rs.getLong("end_time");
                     String uuidString = rs.getString("player_uuid");
 
-                    cache.computeIfAbsent(questId, k -> new ActiveQuestState(new ConcurrentHashMap<>(), ConcurrentHashMap.newKeySet()));
+                    cache.computeIfAbsent(questId, k -> new ActiveQuestState(new ConcurrentHashMap<>(), ConcurrentHashMap.newKeySet(), endTime));
 
                     cache.get(questId).objectiveProgress().put(objectiveId, progress);
 

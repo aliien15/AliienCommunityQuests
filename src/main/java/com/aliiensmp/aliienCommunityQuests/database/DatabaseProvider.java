@@ -46,9 +46,10 @@ public interface DatabaseProvider {
      * @param questId The active quest ID.
      * @param objectiveProgress The current global completion progress.
      * @param participants The set of UUIDs currently contributing.
+     * @param endTime the time in milliseconds until the quest deadline.
      * @return A future completing when the backup is safely stored.
      */
-    CompletableFuture<Void> saveActiveQuest(final String questId, final Map<String, Integer> objectiveProgress, final Set<UUID> participants);
+    CompletableFuture<Void> saveActiveQuest(final String questId, final Map<String, Integer> objectiveProgress, final Set<UUID> participants, final long endTime);
 
     /**
      * Fetches all in-progress quests and their contributors upon server startup.

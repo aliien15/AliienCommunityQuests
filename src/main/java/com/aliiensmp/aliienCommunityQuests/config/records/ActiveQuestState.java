@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record ActiveQuestState(
         Map<String, Integer> objectiveProgress,
-        Set<UUID> participants
+        Set<UUID> participants,
+        long endTime
 ) {
 }

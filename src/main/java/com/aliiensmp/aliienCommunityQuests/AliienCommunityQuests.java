@@ -9,6 +9,8 @@ import com.aliiensmp.aliienCommunityQuests.database.options.H2;
 import com.aliiensmp.aliienCommunityQuests.database.options.MariaDB;
 import com.aliiensmp.aliienCommunityQuests.database.options.MySQL;
 import com.aliiensmp.aliienCommunityQuests.database.options.SQLite;
+import com.aliiensmp.aliienCommunityQuests.listeners.*;
+import com.aliiensmp.aliienCommunityQuests.manager.QuestManager;
 import com.aliiensmp.core.AliienCore;
 import com.aliiensmp.core.config.ConfigManager;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
@@ -26,6 +28,7 @@ public final class AliienCommunityQuests extends JavaPlugin {
     private YamlDocument settings;
 
     private DatabaseProvider databaseProvider;
+    private QuestManager questManager;
 
     @Override
     public void onEnable() {
@@ -37,6 +40,8 @@ public final class AliienCommunityQuests extends JavaPlugin {
         }
 
         setupDatabase();
+        this.questManager = new QuestManager(this);
+        registerListeners();
     }
 
     @Override
@@ -71,6 +76,22 @@ public final class AliienCommunityQuests extends JavaPlugin {
             getLogger().log(Level.SEVERE, "Failed to load or update configuration files!", e);
             return false;
         }
+    }
+
+    /**
+     * Registers all the quest listeners when the plugin enables
+     */
+    public void registerListeners() {
+        getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
+        getServer().getPluginManager().registerEvents(new BreedingListener(this), this);
+        getServer().getPluginManager().registerEvents(new ConsumingListener(this), this);
+        getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
+        getServer().getPluginManager().registerEvents(new EnchantingListener(this), this);
+        getServer().getPluginManager().registerEvents(new EntityKillListener(this), this);
+        getServer().getPluginManager().registerEvents(new PlayerFishListener(this), this);
+        getServer().getPluginManager().registerEvents(new SmeltingListener(this), this);
+        getServer().getPluginManager().registerEvents(new TamingListener(this), this);
+        getServer().getPluginManager().registerEvents(new VillagerTradingListener(this), this);
     }
 
     /**
