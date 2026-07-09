@@ -1,4 +1,5 @@
 prefix: "&6&lAliienCommunityQuests &r&8| &6"
+no-perms: "You do not have permission to do this!"
 reload:
   reloading: "Reloading AliienCommunityQuests..."
   fail: "Failed to reload AliienCommunityQuests (check console for errors)"
@@ -10,6 +11,8 @@ quests:
   started: "A new community quest has just started!"
   completed: "A community quest has just been completed!"
   ended: "A community quest has just ended, and unfortunately it was not completed :("
+  reset: "This quest has been reset by an admin!"
+  not-found: "This quest does not exist!"
 
 # Do not touch this
 config-version: 1

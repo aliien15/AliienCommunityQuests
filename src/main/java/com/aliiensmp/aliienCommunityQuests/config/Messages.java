@@ -30,4 +30,13 @@ public class Messages {
 
     @Key("quests.ended")
     public static final String QUEST_ENDED = "A community quest has just ended, and unfortunately it was not completed :(";
+
+    @Key("quests.reset")
+    public static final String QUEST_RESET = "This quest has been reset by an admin!";
+
+    @Key("quests.not-found")
+    public static final String QUEST_NOT_FOUND = "This quest does not exist!";
+
+    @Key("no-perms")
+    public static final String NO_PERMS = "You do not have permission to do this!";
 }

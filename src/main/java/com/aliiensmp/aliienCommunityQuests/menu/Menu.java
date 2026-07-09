@@ -152,35 +152,36 @@ public class Menu {
     }
 
     /**
-     * Generates the dynamic visual ItemStack for a quest. This acts as the functional lore parser, 
+     * Generates the dynamic visual ItemStack for a quest. This acts as the functional lore parser,
      * safely replacing real-time progress placeholders and expanding list variables natively.
      *
      * @param questData The static configuration record holding the blueprint of the quest.
      * @param state     The active database state holding the real-time progress of the quest.
      * @return A completely constructed, localized ItemStack ready to be displayed in a GUI.
-     * @requires Both questData and state are not null.
-     * @ensures The `%active_objectives` placeholder dynamically expands into multiple lines based 
-     * on the objective count, and all `%current_x%` / `%amount_x%` variables are accurately injected.
      */
     private ItemStack createQuestItem(Quest questData, ActiveQuestState state) {
         final List<String> parsedLore = questData.lore().stream()
                 .flatMap(line -> {
                     // Handle the expanding list placeholder
                     if (line.contains("%active_objectives")) {
-                        return questData.objectives().stream().map(objective ->
-                                questData.objectiveFormat()
-                                        .replace("%target%", objective.target())
-                                        .replace("%current%", String.valueOf(state.objectiveProgress().getOrDefault(objective.id(), 0)))
-                                        .replace("%amount%", String.valueOf(objective.amount()))
-                        );
+                        return questData.objectives().stream()
+                                .filter(objective -> state.objectiveProgress().containsKey(objective.id()))
+                                .map(objective ->
+                                        questData.objectiveFormat()
+                                                .replace("%target%", objective.target())
+                                                .replace("%current%", String.valueOf(state.objectiveProgress().get(objective.id())))
+                                                .replace("%amount%", String.valueOf(objective.amount()))
+                                );
                     }
 
                     // Handle the regular ID-based placeholders
                     String parsedLine = line;
                     for (final Objective obj : questData.objectives()) {
-                        parsedLine = parsedLine
-                                .replace("%current_" + obj.id() + "%", String.valueOf(state.objectiveProgress().getOrDefault(obj.id(), 0)))
-                                .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()));
+                        if (state.objectiveProgress().containsKey(obj.id())) {
+                            parsedLine = parsedLine
+                                    .replace("%current_" + obj.id() + "%", String.valueOf(state.objectiveProgress().get(obj.id())))
+                                    .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()));
+                        }
                     }
 
                     return Stream.of(parsedLine);

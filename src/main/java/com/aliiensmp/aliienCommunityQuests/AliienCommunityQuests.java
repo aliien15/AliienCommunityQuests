@@ -1,5 +1,9 @@
 package com.aliiensmp.aliienCommunityQuests;
 
+import co.aikar.commands.MessageKeys;
+import co.aikar.commands.PaperCommandManager;
+import com.aliiensmp.aliienCommunityQuests.commands.AdminCommands;
+import com.aliiensmp.aliienCommunityQuests.commands.PlayerCommands;
 import com.aliiensmp.aliienCommunityQuests.config.MainMenu;
 import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.config.Quests;
@@ -14,6 +18,7 @@ import com.aliiensmp.aliienCommunityQuests.manager.QuestManager;
 import com.aliiensmp.core.AliienCore;
 import com.aliiensmp.core.config.ConfigManager;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -35,13 +40,16 @@ public final class AliienCommunityQuests extends JavaPlugin {
         AliienCore.init(this);
 
         if (!loadConfig()) {
-            getLogger().log(Level.SEVERE, "Failed to load configurations!");
+            getLogger().log(Level.SEVERE, "Failed to load configurations, therefore the plugin is shutting down!");
             getServer().getPluginManager().disablePlugin(this);
         }
 
         setupDatabase();
         this.questManager = new QuestManager(this);
         registerListeners();
+        setupCommands();
+
+        getLogger().info("AliienCommunityQuests has been enabled successfully!");
     }
 
     @Override
@@ -82,16 +90,17 @@ public final class AliienCommunityQuests extends JavaPlugin {
      * Registers all the quest listeners when the plugin enables
      */
     public void registerListeners() {
-        getServer().getPluginManager().registerEvents(new BlockBreakListener(this), this);
-        getServer().getPluginManager().registerEvents(new BreedingListener(this), this);
-        getServer().getPluginManager().registerEvents(new ConsumingListener(this), this);
-        getServer().getPluginManager().registerEvents(new CraftingListener(this), this);
-        getServer().getPluginManager().registerEvents(new EnchantingListener(this), this);
-        getServer().getPluginManager().registerEvents(new EntityKillListener(this), this);
-        getServer().getPluginManager().registerEvents(new PlayerFishListener(this), this);
-        getServer().getPluginManager().registerEvents(new SmeltingListener(this), this);
-        getServer().getPluginManager().registerEvents(new TamingListener(this), this);
-        getServer().getPluginManager().registerEvents(new VillagerTradingListener(this), this);
+        PluginManager pm = getServer().getPluginManager();
+        pm.registerEvents(new BlockBreakListener(this), this);
+        pm.registerEvents(new BreedingListener(this), this);
+        pm.registerEvents(new ConsumingListener(this), this);
+        pm.registerEvents(new CraftingListener(this), this);
+        pm.registerEvents(new EnchantingListener(this), this);
+        pm.registerEvents(new EntityKillListener(this), this);
+        pm.registerEvents(new PlayerFishListener(this), this);
+        pm.registerEvents(new SmeltingListener(this), this);
+        pm.registerEvents(new TamingListener(this), this);
+        pm.registerEvents(new VillagerTradingListener(this), this);
     }
 
     /**
@@ -145,9 +154,38 @@ public final class AliienCommunityQuests extends JavaPlugin {
     }
 
     /**
+     * Sets up the plugin commands
+     */
+    private void setupCommands() {
+        PaperCommandManager commandManager = new PaperCommandManager(this);
+
+        // Prefix
+        commandManager.getLocales().addMessage(
+                Locale.ENGLISH,
+                MessageKeys.ERROR_PREFIX,
+                Messages.PREFIX
+        );
+
+        // No perms msg
+        commandManager.getLocales().addMessage(
+                Locale.ENGLISH,
+                MessageKeys.PERMISSION_DENIED,
+                Messages.NO_PERMS
+        );
+
+        // Auto tab
+        commandManager.getCommandCompletions().registerCompletion("questId", c -> QuestManager.ACTIVE_QUESTS.keySet());
+
+        // Events registerings
+        commandManager.registerCommand(new PlayerCommands(this));
+        commandManager.registerCommand(new AdminCommands(this));
+    }
+
+    /**
      * @return the database provider
      */
     public DatabaseProvider getDatabaseProvider() {
         return databaseProvider;
     }
+    public QuestManager getQuestManager() { return questManager; }
 }
