@@ -65,7 +65,7 @@ public class QuestManager {
                     MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_ENDED);
                     ACTIVE_QUESTS.remove(questId);
                     CompletableFuture.runAsync(() -> plugin.getDatabaseProvider().clearActiveQuestBackup(questId));
-                    generateNewQuests();
+                    generateMissingQuests();
                 }
             }
         }, 20L, 20L);
