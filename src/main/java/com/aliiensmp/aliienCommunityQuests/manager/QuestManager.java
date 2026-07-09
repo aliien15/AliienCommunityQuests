@@ -1,14 +1,17 @@
 package com.aliiensmp.aliienCommunityQuests.manager;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
+import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.config.Quests;
 import com.aliiensmp.aliienCommunityQuests.config.Settings;
 import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
 import com.aliiensmp.core.utils.DurationUtils;
+import com.aliiensmp.core.utils.MessageUtils;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class QuestManager {
@@ -25,6 +28,7 @@ public class QuestManager {
             plugin.getLogger().info("Successfully loaded " + ACTIVE_QUESTS.size() + " active quests into memory.");
         });
 
+        startRotationTask();
         startBackupTask();
     }
 
@@ -47,34 +51,55 @@ public class QuestManager {
     }
 
     /**
-     * Creates a new quest
+     * Timer that keeps an eye on the quests, handling if any of them reach their deadline
+     * without being completed by the players
      */
-    public void generateNewQuest() {
-        Optional<Quest> nextQuest = Quests.QUEST_LIST.stream()
+    private void startRotationTask() {
+        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task -> {
+            final long currentTime = System.currentTimeMillis();
+
+            for (Map.Entry<String, ActiveQuestState> entry : ACTIVE_QUESTS.entrySet()) {
+                if (entry.getValue().endTime() <= currentTime) {
+                    final String questId = entry.getKey();
+
+                    MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_ENDED);
+                    ACTIVE_QUESTS.remove(questId);
+                    CompletableFuture.runAsync(() -> plugin.getDatabaseProvider().clearActiveQuestBackup(questId));
+                    generateNewQuests();
+                }
+            }
+        }, 20L, 20L);
+    }
+
+    /**
+     * Scans the configuration for any inactive quests and starts them all simultaneously.
+     */
+    public void generateMissingQuests() {
+        Quests.QUEST_LIST.stream()
                 .filter(quest -> !ACTIVE_QUESTS.containsKey(quest.id()))
-                .sorted(Comparator.comparingInt(Quest::priority))
-                .findFirst();
+                .forEach(quest -> {
+                    // Update DB
+                    final String timeString = quest.duration();
+                    final long timeInMilli = DurationUtils.parse(timeString).toMillis() + System.currentTimeMillis();
 
-        nextQuest.ifPresent(quest -> {
-            // Update DB
-            final String timeString = quest.duration();
-            final long timeInMilli = DurationUtils.parse(timeString).toMillis() + System.currentTimeMillis();
+                    final Map<String, Integer> objectivesProgress = new ConcurrentHashMap<>();
 
-            final Map<String, Integer> objectivesProgress = new ConcurrentHashMap<>();
+                    List<Objective> availableObjectives = new ArrayList<>(quest.objectives());
+                    Collections.shuffle(availableObjectives);
+                    availableObjectives.stream()
+                            .limit(quest.objectivesAmount())
+                            .forEach(objective -> objectivesProgress.put(objective.id(), 0));
 
-            List<Objective> availableObjectives = new ArrayList<>(quest.objectives());
-            Collections.shuffle(availableObjectives);
-            availableObjectives.stream()
-                    .limit(quest.objectivesAmount())
-                    .forEach(objective -> objectivesProgress.put(objective.id(), 0));
+                    final Set<UUID> participants = ConcurrentHashMap.newKeySet();
 
-            final Set<UUID> participants = ConcurrentHashMap.newKeySet();
+                    CompletableFuture.runAsync(() -> plugin.getDatabaseProvider().saveActiveQuest(quest.id(), objectivesProgress, participants, timeInMilli));
 
-            plugin.getDatabaseProvider().saveActiveQuest(quest.id(), objectivesProgress, participants, timeInMilli);
+                    // Update live map
+                    ActiveQuestState state = new ActiveQuestState(objectivesProgress, participants, timeInMilli);
+                    ACTIVE_QUESTS.put(quest.id(), state);
 
-            // Update live map
-            ActiveQuestState state = new ActiveQuestState(objectivesProgress, participants, timeInMilli);
-            ACTIVE_QUESTS.put(quest.id(), state);
-        });
+                    // Other
+                    MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_STARTED);
+                });
     }
 }
