@@ -1,6 +1,36 @@
 name: AliienCommunityQuests
 version: '${version}'
-
 main: com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests
 api-version: '1.21'
+folia-supported: true
 load: POSTWORLD
+description: Premium community quests system with Folia support and dynamic rotation.
+
+permissions:
+  # Player Permissions
+  aliien.communityquests.menu:
+    description: Allows players to open the community quests menu.
+    default: true
+
+  # Specific Admin Permissions
+  aliien.communityquests.admin.reload:
+    description: Allows admins to reload the config and messages files.
+    default: op
+  aliien.communityquests.admin.reset:
+    description: Allows admins to forcefully wipe and skip an active quest.
+    default: op
+
+  # Parent Permissions
+  aliien.communityquests.admin:
+    description: Grants access to all admin commands.
+    default: op
+    children:
+      aliien.communityquests.admin.reload: true
+      aliien.communityquests.admin.reset: true
+
+  aliien.communityquests.*:
+    description: Grants access to every permission in the plugin.
+    default: op
+    children:
+      aliien.communityquests.menu: true
+      aliien.communityquests.admin: true
