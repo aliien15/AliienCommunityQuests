@@ -1,5 +1,6 @@
 prefix: "&6&lAliienCommunityQuests &r&8| &6"
 no-perms: "You do not have permission to do this!"
+new-update: "A new AliienCommunityQuests update is now available!"
 reload:
   reloading: "Reloading AliienCommunityQuests..."
   fail: "Failed to reload AliienCommunityQuests (check console for errors)"

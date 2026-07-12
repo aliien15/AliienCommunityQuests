@@ -18,6 +18,10 @@ import com.aliiensmp.aliienCommunityQuests.manager.QuestManager;
 import com.aliiensmp.core.AliienCore;
 import com.aliiensmp.core.config.ConfigManager;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
+import com.aliiensmp.core.utils.ColorUtils;
+import com.aliiensmp.core.utils.updatechecker.UpdateChecker;
+import com.aliiensmp.core.utils.updatechecker.UpdateNotifyListener;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -35,6 +39,8 @@ public final class AliienCommunityQuests extends JavaPlugin {
     private DatabaseProvider databaseProvider;
     private QuestManager questManager;
 
+    private static final String UPDATE_GIST_URL = "https://gist.githubusercontent.com/aliien15/e36ae7db63b09d5127205fb9a38063e4/raw/AliienCommunityQuests.txt";
+
     @Override
     public void onEnable() {
         AliienCore.init(this);
@@ -49,6 +55,9 @@ public final class AliienCommunityQuests extends JavaPlugin {
         registerListeners();
         setupCommands();
 
+        setupUpdateChecker();
+        setupBstats();
+
         getLogger().info("AliienCommunityQuests has been enabled successfully!");
     }
 
@@ -57,6 +66,38 @@ public final class AliienCommunityQuests extends JavaPlugin {
         if (AliienCore.getDatabase() != null && databaseProvider != null) AliienCore.getDatabase().disconnect();
 
         getLogger().info("AliienCommunityQuests has been disabled successfully!");
+    }
+
+    /**
+     * Setup bStats hook
+     */
+    private void setupBstats() {
+        Metrics metric = new Metrics(this, 32585);
+    }
+
+    /**
+     * Starts the version check and join notification flow when enabled.
+     */
+    private void setupUpdateChecker() {
+        if (!Settings.CHECK_FOR_UPDATES) return;
+
+        new UpdateChecker(this, UPDATE_GIST_URL).getVersion(version -> {
+            if (this.getPluginMeta().getVersion().equals(version)) {
+                getLogger().info("AliienCommunityQuests is up to date!");
+            } else {
+                getLogger().warning("A new update is available for AliienCommmunityQuests!");
+            }
+        });
+
+        getServer().getPluginManager().registerEvents(
+                new UpdateNotifyListener(
+                        this,
+                        UPDATE_GIST_URL,
+                        "aliien.communityquests.admin",
+                        () -> ColorUtils.color(Messages.NEW_UPDATE)
+                ),
+                this
+        );
     }
 
     /**

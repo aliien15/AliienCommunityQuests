@@ -39,4 +39,7 @@ public class Messages {
 
     @Key("no-perms")
     public static final String NO_PERMS = "You do not have permission to do this!";
+
+    @Key("new-update")
+    public static final String NEW_UPDATE = "A new AliienCommunityQuests update is now available!";
 }
