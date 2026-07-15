@@ -50,15 +50,15 @@
               <relocations>
                 <relocation>
                   <pattern>com.aliiensmp.core</pattern>
-                  <shadedPattern>com.aliiensmp.aliienchatcolor.core</shadedPattern>
+                  <shadedPattern>com.aliiensmp.aliienCommunityQuests.core</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.bstats</pattern>
-                  <shadedPattern>com.aliiensmp.aliienchatcolor.bstats</shadedPattern>
+                  <shadedPattern>com.aliiensmp.aliienCommunityQuests.bstats</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>co.aikar.commands</pattern>
-                  <shadedPattern>com.aliiensmp.aliienChatColor.lib.acf</shadedPattern>
+                  <shadedPattern>com.aliiensmp.aliienCommunityQuests.lib.acf</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>

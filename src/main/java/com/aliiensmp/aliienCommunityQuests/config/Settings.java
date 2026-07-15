@@ -6,13 +6,13 @@ import com.aliiensmp.core.utils.DurationUtils;
 public class Settings {
 
     @Key("check-for-updates")
-    public static final boolean CHECK_FOR_UPDATES = true;
+    public static boolean CHECK_FOR_UPDATES = true;
 
     @Key("backup-interval")
-    public static final String BACKUP_INTERVAL = "5m";
+    public static String BACKUP_INTERVAL = "5m";
 
     @Key("time-display")
-    public static final String TIME_STYLE = "SHORT";
+    public static String TIME_STYLE = "SHORT";
 
     /**
      * @return the {@code TIME_STYLE} String converted to a DurationUtils Style

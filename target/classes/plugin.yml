@@ -1,5 +1,5 @@
 name: AliienCommunityQuests
-version: '${version}'
+version: '1.0.0'
 main: com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests
 api-version: '1.21'
 folia-supported: true

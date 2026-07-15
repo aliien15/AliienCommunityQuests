@@ -15,13 +15,13 @@ import java.util.Optional;
 public class MainMenu {
 
     @Key("menu.title")
-    public static final String TITLE = "&8Quests - Page %page%";
+    public static String TITLE = "&8Quests - Page %page%";
 
     @Key("menu.rows")
-    public static final int ROWS = 3;
+    public static int ROWS = 3;
 
     @Key("layout.quest-slots")
-    public static final List<Integer> QUEST_SLOTS = List.of(10, 11, 12, 13, 14, 15, 16);
+    public static List<Integer> QUEST_SLOTS = List.of(10, 11, 12, 13, 14, 15, 16);
     
     public static final List<MenuItem> ITEMS_LIST = new ArrayList<>();
 
