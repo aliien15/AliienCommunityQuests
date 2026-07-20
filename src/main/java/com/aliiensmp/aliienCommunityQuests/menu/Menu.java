@@ -76,7 +76,17 @@ public class Menu {
      * @ensures Static items are placed into their correct GUI slots with active, routed click handlers.
      */
     private void buildStaticLayout(AliienGUI menu, Player player, int page, int pendingCount) {
+        // Calculate max pages based on active quests
+        final int totalQuests = QuestManager.ACTIVE_QUESTS.size();
+        final int slotsPerPage = MainMenu.QUEST_SLOTS.size();
+        int maxPages = (int) Math.ceil((double) totalQuests / slotsPerPage);
+        if (maxPages == 0) maxPages = 1;
+
+        final int finalMaxPages = maxPages;
         MainMenu.ITEMS_LIST.forEach(item -> {
+            // Hide pagination arrows if they are a dead end
+            if (item.action() == MenuAction.PREVIOUS_PAGE && page <= 1) return;
+            if (item.action() == MenuAction.NEXT_PAGE && page >= finalMaxPages) return;
 
             // Calculate %target_page%
             int targetPage = page;
@@ -130,6 +140,16 @@ public class Menu {
         final int skipAmount = (page - 1) * questSlotsPerPage;
 
         List<Map.Entry<String, ActiveQuestState>> pagedQuests = QuestManager.ACTIVE_QUESTS.entrySet().stream()
+                // Sort quests by their config priority (highest number first)
+                .sorted((entry1, entry2) -> {
+                    Quest q1 = Quests.QUEST_LIST.stream().filter(q -> q.id().equals(entry1.getKey())).findFirst().orElse(null);
+                    Quest q2 = Quests.QUEST_LIST.stream().filter(q -> q.id().equals(entry2.getKey())).findFirst().orElse(null);
+
+                    int priority1 = (q1 != null) ? q1.priority() : 0;
+                    int priority2 = (q2 != null) ? q2.priority() : 0;
+
+                    return Integer.compare(priority2, priority1);
+                })
                 .skip(skipAmount)
                 .limit(questSlotsPerPage)
                 .toList();
@@ -143,7 +163,6 @@ public class Menu {
                     .findFirst()
                     .orElse(null);
 
-            // Realistically, this is only true when a quest is removed from the config while it is active
             if (questData == null) continue;
 
             ItemStack questItem = createQuestItem(questData, entry.getValue());

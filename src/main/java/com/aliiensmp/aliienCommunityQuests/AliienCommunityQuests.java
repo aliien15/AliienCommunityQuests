@@ -58,6 +58,7 @@ public final class AliienCommunityQuests extends JavaPlugin {
         setupUpdateChecker();
         setupBstats();
 
+        questManager.generateMissingQuests();
         getLogger().info("AliienCommunityQuests has been enabled successfully!");
     }
 
@@ -215,7 +216,7 @@ public final class AliienCommunityQuests extends JavaPlugin {
         );
 
         // Auto tab
-        commandManager.getCommandCompletions().registerCompletion("questId", c -> QuestManager.ACTIVE_QUESTS.keySet());
+        commandManager.getCommandCompletions().registerCompletion("questIds", c -> QuestManager.ACTIVE_QUESTS.keySet());
 
         // Events registerings
         commandManager.registerCommand(new PlayerCommands(this));

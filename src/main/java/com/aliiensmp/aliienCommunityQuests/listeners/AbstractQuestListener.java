@@ -24,7 +24,7 @@ public abstract class AbstractQuestListener implements Listener {
     }
 
     /**
-     * Provesses progress for any active community quest by incrementing the progress in 1 unit.
+     * Processes progress for any active community quest by incrementing the progress in 1 unit.
      *
      * @param playerUUID The UUID of the player contributing.
      * @param type The type of objective being completed.
@@ -43,66 +43,43 @@ public abstract class AbstractQuestListener implements Listener {
      * @param amount the amount to increment the current progress by.
      */
     protected void handleProgress(final UUID playerUUID, final ObjectiveType type, final String target, final int amount) {
-        // If not quests are currently active
         if (ACTIVE_QUESTS.isEmpty()) return;
 
         for (final String questId : ACTIVE_QUESTS.keySet()) {
 
-            // Get the Quest object that corresponds to the active quest we are looking up
-            Quest quest = null;
-            for (final Quest q : Quests.QUEST_LIST) {
-                if (q.id().equals(questId)) {
-                    quest = q;
-                    break;
-                }
-            }
+            // Get the Quest object
+            Quest quest = Quests.QUEST_LIST.stream()
+                    .filter(q -> q.id().equals(questId))
+                    .findFirst()
+                    .orElse(null);
             if (quest == null) continue;
 
-            // Look through all the objectives this quest requires to check if the player's action matches one of them.
-            Objective targetObjective = null;
-            for (final Objective obj : quest.objectives()) {
-                if (obj.type() == type && obj.target().equals(target)) {
-                    targetObjective = obj;
-                    break;
-                }
-            }
+            // Find the matching objective
+            Objective targetObjective = quest.objectives().stream()
+                    .filter(obj -> obj.type() == type && obj.target().equals(target))
+                    .findFirst()
+                    .orElse(null);
             if (targetObjective == null) continue;
 
-            // Update the progress
+            // Check if the objective is already maxed out before updating
+            int currentPreProgress = ACTIVE_QUESTS.get(questId).objectiveProgress().getOrDefault(targetObjective.id(), 0);
+            if (currentPreProgress >= targetObjective.amount()) continue;
+
             final Quest finalQuest = quest;
             final Objective finalTargetObjective = targetObjective;
 
             ACTIVE_QUESTS.computeIfPresent(questId, (id, state) -> {
 
-                // Get the current progress for this specific objective
                 final int currentObjProgress = state.objectiveProgress().getOrDefault(finalTargetObjective.id(), 0);
-                final int newProgress = currentObjProgress + amount;
+                final int newProgress = Math.min(currentObjProgress + amount, finalTargetObjective.amount());
 
-                // Update the specific objective's progress
                 state.objectiveProgress().put(finalTargetObjective.id(), newProgress);
                 state.participants().add(playerUUID);
 
-                // Verify if all active objectives for this quest are completed
-                boolean allCompleted = true;
-                for (final String activeObjId : state.objectiveProgress().keySet()) {
+                // Check if all objectives in this quest meet or exceed their required amounts
+                boolean allCompleted = finalQuest.objectives().stream()
+                        .allMatch(o -> state.objectiveProgress().getOrDefault(o.id(), 0) >= o.amount());
 
-                    // Find the required amount for the objective we are checking
-                    int requiredAmount = 0;
-                    for (final Objective o : finalQuest.objectives()) {
-                        if (o.id().equals(activeObjId)) {
-                            requiredAmount = o.amount();
-                            break;
-                        }
-                    }
-
-                    // Check if this objective is completed
-                    if (state.objectiveProgress().get(activeObjId) < requiredAmount) {
-                        allCompleted = false;
-                        break;
-                    }
-                }
-
-                // Hand out the loot if everything is done
                 if (allCompleted) {
                     MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_COMPLETED);
 
@@ -116,7 +93,6 @@ public abstract class AbstractQuestListener implements Listener {
                     return null;
                 }
 
-                // If not done, return the updated state
                 return new ActiveQuestState(state.objectiveProgress(), state.participants(), state.endTime());
             });
         }
