@@ -16,16 +16,18 @@ quests:
       priority: 1
     # Any of the options in this menu section can be removed if you don't want them
     menu-options:
-      # The display name in the main menu
-      name: "&d&lWeekly Quest"
-      # The lore (valid placeholders: %current_<objective id>%, %amount_<objective id>%)
+      # The display name in the main menu (valid placeholders: %time_left%, %status%)
+      name: "&d&lWeekly Quest &r&7(%time_left%)"
+      # The lore (valid placeholders: %active_objectives%, %time_left%, %status%)
       lore:
         - ""
         - "&7Complete this quest within the next week"
         - "&7to earn amazing rewards!"
         - ""
+        - "&dStatus: %status%"
+        - ""
         - "&dObjectives:"
-        - "%active_objectives"
+        - "%active_objectives%"
         - ""
         - "&dRewards:"
         - "&8- &f25.000$"

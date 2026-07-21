@@ -11,7 +11,9 @@ com\aliiensmp\aliienCommunityQuests\commands\AdminCommands.class
 com\aliiensmp\aliienCommunityQuests\config\records\Objective.class
 com\aliiensmp\aliienCommunityQuests\listeners\CraftingListener.class
 com\aliiensmp\aliienCommunityQuests\config\records\ActiveQuestState.class
+com\aliiensmp\aliienCommunityQuests\config\Formatting.class
 com\aliiensmp\aliienCommunityQuests\config\Quests.class
+com\aliiensmp\aliienCommunityQuests\enums\TargetFormat.class
 com\aliiensmp\aliienCommunityQuests\database\options\MySQL.class
 com\aliiensmp\aliienCommunityQuests\commands\PlayerCommands.class
 com\aliiensmp\aliienCommunityQuests\config\records\MenuItem.class

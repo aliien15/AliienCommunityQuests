@@ -1,10 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.menu;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
-import com.aliiensmp.aliienCommunityQuests.config.Formatting;
-import com.aliiensmp.aliienCommunityQuests.config.MainMenu;
-import com.aliiensmp.aliienCommunityQuests.config.Messages;
-import com.aliiensmp.aliienCommunityQuests.config.Quests;
+import com.aliiensmp.aliienCommunityQuests.config.*;
 import com.aliiensmp.aliienCommunityQuests.config.records.MenuItem;
 import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
@@ -14,11 +11,13 @@ import com.aliiensmp.aliienCommunityQuests.manager.QuestManager;
 import com.aliiensmp.core.items.ItemBuilder;
 import com.aliiensmp.core.menu.AliienGUI;
 import com.aliiensmp.core.menu.ClickableItem;
+import com.aliiensmp.core.utils.DurationUtils;
 import com.aliiensmp.core.utils.MessageUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -165,7 +164,7 @@ public class Menu {
     }
 
     /**
-     * Generates the dynamic visual ItemStack for a quest. This acts as the functional lore parser,
+     * Generates the dynamic visual ItemStack for a quest. This acts as the lore parser,
      * safely replacing real-time progress placeholders and expanding list variables natively.
      *
      * @param questData The static configuration record holding the blueprint of the quest.
@@ -173,7 +172,22 @@ public class Menu {
      * @return A completely constructed, localized ItemStack ready to be displayed in a GUI.
      */
     private ItemStack createQuestItem(Quest questData, ActiveQuestState state) {
+
+        // Calculate the remaining time safely (preventing negative values if caught exactly at rotation)
+        final long timeRemainingMillis = Math.max(0, state.endTime() - System.currentTimeMillis());
+        final String formattedTime = DurationUtils.format(
+                Duration.ofMillis(timeRemainingMillis),
+                Settings.toStyle()
+        );
+
+        // Check if all objectives in this quest meet or exceed their required amounts
+        final boolean isCompleted = questData.objectives().stream()
+                .filter(o -> state.objectiveProgress().containsKey(o.id()))
+                .allMatch(o -> state.objectiveProgress().getOrDefault(o.id(), 0) >= o.amount());
+
         final List<String> parsedLore = questData.lore().stream()
+                // Time placeholder
+                .map(line -> line.replace("%time_left%", formattedTime))
                 .flatMap(line -> {
                     // Handle the expanding list placeholder
                     if (line.contains("%active_objectives")) {
@@ -187,14 +201,15 @@ public class Menu {
                                 );
                     }
 
-                    // Handle the regular ID-based placeholders
+                    // Handle the regular ID-based placeholders, as well as status
                     String parsedLine = line;
                     for (final Objective obj : questData.objectives()) {
                         if (state.objectiveProgress().containsKey(obj.id())) {
                             parsedLine = parsedLine
                                     .replace("%target_" + obj.id() + "%", Formatting.formatObjective(obj))
                                     .replace("%current_" + obj.id() + "%", String.valueOf(state.objectiveProgress().get(obj.id())))
-                                    .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()));
+                                    .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()))
+                                    .replace("%status%", isCompleted ? Settings.STATUS_COMPLETED : Settings.STATUS_IN_PROGRESS);
                         }
                     }
 
@@ -203,7 +218,7 @@ public class Menu {
                 .toList();
 
         return new ItemBuilder(questData.material())
-                .name(questData.name())
+                .name(questData.name().replace("%time_left%", formattedTime).replace("%status%", isCompleted ? Settings.STATUS_COMPLETED : Settings.STATUS_IN_PROGRESS))
                 .addFlags(questData.itemFlags().toArray(new ItemFlag[0]))
                 .glow(questData.glow())
                 .stringLore(parsedLore)
@@ -230,7 +245,7 @@ public class Menu {
         switch (item.action()) {
             case NEXT_PAGE -> handleNextPage(player, page);
             case PREVIOUS_PAGE -> handlePreviousPage(player, page);
-            case REWARDS -> handleRewards(item, player);
+            case REWARDS -> handleRewards(item, player, page);
             case NONE -> {}
         }
     }
@@ -241,7 +256,7 @@ public class Menu {
      * @param player player clicking the item
      * @param item the menu item
      */
-    private void handleRewards(final MenuItem item, final Player player) {
+    private void handleRewards(final MenuItem item, final Player player, final int page) {
         plugin.getDatabaseProvider().getPendingRewards(player.getUniqueId()).thenAccept(rewardCmds -> {
             player.getScheduler().run(plugin, task -> {
 
@@ -256,7 +271,8 @@ public class Menu {
                 });
 
                 MessageUtils.send(player, Messages.PREFIX, Messages.REWARDS_CLAIMED);
-                CompletableFuture.runAsync(() -> plugin.getDatabaseProvider().clearPendingRewards(player.getUniqueId()));
+                plugin.getDatabaseProvider().clearPendingRewards(player.getUniqueId())
+                        .thenRun(() -> open(player, page));
             }, null);
 
         }).exceptionally(ex -> {

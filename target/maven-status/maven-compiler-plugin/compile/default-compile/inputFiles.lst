@@ -1,6 +1,7 @@
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\AliienCommunityQuests.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\commands\AdminCommands.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\commands\PlayerCommands.java
+C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\config\Formatting.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\config\MainMenu.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\config\Messages.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\config\Quests.java
@@ -16,6 +17,7 @@ C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunit
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\database\options\SQLite.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\enums\MenuAction.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\enums\ObjectiveType.java
+C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\enums\TargetFormat.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\listeners\AbstractQuestListener.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\listeners\BlockBreakListener.java
 C:\Dev\Projects\AliienCommunityQuests\src\main\java\com\aliiensmp\aliienCommunityQuests\listeners\BreedingListener.java

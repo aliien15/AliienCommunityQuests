@@ -32,5 +32,11 @@ backup-interval: 5m
 # - CLOCK: 02:30
 time-display: SHORT
 
+# Replaces the %status% placeholder for each quest, so players can know whether a quest is already
+# completed or still in progress
+status:
+  completed: "&a&lCOMPLETED"
+  in-progress: "&e&lIN PROGRESS"
+
 # Do not touch this
 config-version: 1

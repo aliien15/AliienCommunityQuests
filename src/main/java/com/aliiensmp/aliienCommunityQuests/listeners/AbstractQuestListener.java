@@ -8,8 +8,10 @@ import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
 import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.core.utils.MessageUtils;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -78,6 +80,7 @@ public abstract class AbstractQuestListener implements Listener {
 
                 // Check if all objectives in this quest meet or exceed their required amounts
                 boolean allCompleted = finalQuest.objectives().stream()
+                        .filter(o -> state.objectiveProgress().containsKey(o.id()))
                         .allMatch(o -> state.objectiveProgress().getOrDefault(o.id(), 0) >= o.amount());
 
                 if (allCompleted) {
@@ -85,14 +88,26 @@ public abstract class AbstractQuestListener implements Listener {
 
                     CompletableFuture.runAsync(() -> {
                         plugin.getDatabaseProvider().clearActiveQuestBackup(id);
-                        for (final String reward : finalQuest.rewards()) {
-                            plugin.getDatabaseProvider().grantRewards(state.participants(), reward);
-                        }
 
-                        plugin.getQuestManager().generateMissingQuests();
+                        state.participants().forEach(uuid -> {
+                            final Player player = plugin.getServer().getPlayer(uuid);
+
+                            if (player != null && player.isOnline()) {
+                                plugin.getServer().getGlobalRegionScheduler().run(plugin, task -> {
+                                    finalQuest.rewards().forEach(reward -> {
+                                        final String cmd = reward.replace("%player%", player.getName());
+                                        plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), cmd);
+                                    });
+                                });
+                            } else {
+                                finalQuest.rewards().forEach(reward -> {
+                                    plugin.getDatabaseProvider().grantRewards(Collections.singleton(uuid), reward);
+                                });
+                            }
+                        });
                     });
 
-                    return null;
+                    return state;
                 }
 
                 return new ActiveQuestState(state.objectiveProgress(), state.participants(), state.endTime());

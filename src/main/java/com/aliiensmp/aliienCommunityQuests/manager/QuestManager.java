@@ -24,6 +24,34 @@ public class QuestManager {
         this.plugin = plugin;
 
         plugin.getDatabaseProvider().loadActiveCache().thenAccept(cache -> {
+
+            // Identify and purge ghost quests
+            final List<String> invalidQuestIds = cache.keySet().stream()
+                    .filter(questId -> Quests.QUEST_LIST.stream().noneMatch(q -> q.id().equals(questId)))
+                    .toList();
+
+            invalidQuestIds.forEach(invalidId -> {
+                cache.remove(invalidId);
+                CompletableFuture.runAsync(() -> plugin.getDatabaseProvider().clearActiveQuestBackup(invalidId));
+                plugin.getLogger().warning("Cleaned up ghost quest '" + invalidId + "' from the database as it is missing from quests.yml.");
+            });
+
+            // Correct soft-locks if the owner lowered the required objective amounts
+            cache.forEach((questId, state) -> {
+                Quests.QUEST_LIST.stream()
+                        .filter(q -> q.id().equals(questId))
+                        .findFirst()
+                        .ifPresent(blueprint -> {
+                            blueprint.objectives().forEach(obj -> {
+                                int currentProgress = state.objectiveProgress().getOrDefault(obj.id(), 0);
+                                if (currentProgress > obj.amount()) {
+                                    state.objectiveProgress().put(obj.id(), obj.amount());
+                                    plugin.getLogger().info("Capped progress for objective '" + obj.id() + "' in quest '" + questId + "' due to a configuration change.");
+                                }
+                            });
+                        });
+            });
+
             ACTIVE_QUESTS = cache;
             plugin.getLogger().info("Successfully loaded " + ACTIVE_QUESTS.size() + " active quests into memory.");
         });

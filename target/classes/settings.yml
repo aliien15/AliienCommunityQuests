@@ -1,7 +1,10 @@
 # Used to store the plugin data
 database:
   # Valid types: SQLITE, H2, MYSQL, MARIADB
+  # NOTE: CROSS-SERVER SYNC WITH MYSQL OR MARIADB IS NOT SUPPORTED AND WILL CAUSE YOUR QUESTS TO BREAK
   type: H2
+  # The table prefix (you dont need to touch this if you are using sqlite or h2
+  table-prefix: "communityquests_"
   # If you are not using MySQL or MariaDB this section is completely irrelevant
   settings:
     host: "localhost"
@@ -28,6 +31,12 @@ backup-interval: 5m
 # - LONG: 2 Hours 30 Minutes
 # - CLOCK: 02:30
 time-display: SHORT
+
+# Replaces the %status% placeholder for each quest, so players can know whether a quest is already
+# completed or still in progress
+status:
+  completed: "&a&lCOMPLETED"
+  in-progress: "&e&lIN PROGRESS"
 
 # Do not touch this
 config-version: 1

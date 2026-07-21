@@ -24,4 +24,10 @@ public class Settings {
             default -> DurationUtils.Style.SHORT;
         };
     }
+
+    @Key("status.completed")
+    public static String STATUS_COMPLETED = "&a&lCOMPLETED";
+
+    @Key("status.in-progress")
+    public static String STATUS_IN_PROGRESS = "&7%current%/%amount%";
 }
