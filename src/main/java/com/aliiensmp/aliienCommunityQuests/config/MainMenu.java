@@ -7,6 +7,7 @@ import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
 import com.aliiensmp.core.lib.boostedyaml.block.implementation.Section;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,13 +16,13 @@ import java.util.Optional;
 public class MainMenu {
 
     @Key("menu.title")
-    public static String TITLE = "&8Quests - Page %page%";
+    public static @NotNull String TITLE = "&8Quests - Page %page%";
 
     @Key("menu.rows")
     public static int ROWS = 3;
 
     @Key("layout.quest-slots")
-    public static List<Integer> QUEST_SLOTS = List.of(10, 11, 12, 13, 14, 15, 16);
+    public static @NotNull List<Integer> QUEST_SLOTS = List.of(10, 11, 12, 13, 14, 15, 16);
     
     public static final List<MenuItem> ITEMS_LIST = new ArrayList<>();
 

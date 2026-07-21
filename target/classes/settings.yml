@@ -38,5 +38,8 @@ status:
   completed: "&a&lCOMPLETED"
   in-progress: "&e&lIN PROGRESS"
 
+# For quests revolving breaking ores, should the deepslate variations be taken in count?
+count-deepslate-ores: true
+
 # Do not touch this
 config-version: 1

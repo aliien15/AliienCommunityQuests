@@ -7,6 +7,7 @@ import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
 import com.aliiensmp.core.lib.boostedyaml.block.implementation.Section;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.Optional;
 
 public class Quests {
 
-    public static final List<Quest> QUEST_LIST = new ArrayList<>();
+    public static final @NotNull List<Quest> QUEST_LIST = new ArrayList<>();
 
     public static void load(YamlDocument config) {
         QUEST_LIST.clear();
