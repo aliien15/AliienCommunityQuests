@@ -4,6 +4,7 @@ import co.aikar.commands.MessageKeys;
 import co.aikar.commands.PaperCommandManager;
 import com.aliiensmp.aliienCommunityQuests.commands.AdminCommands;
 import com.aliiensmp.aliienCommunityQuests.commands.PlayerCommands;
+import com.aliiensmp.aliienCommunityQuests.config.Formatting;
 import com.aliiensmp.aliienCommunityQuests.config.MainMenu;
 import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.config.Quests;
@@ -35,6 +36,7 @@ public final class AliienCommunityQuests extends JavaPlugin {
     private YamlDocument messages;
     private YamlDocument quests;
     private YamlDocument settings;
+    private YamlDocument formatting;
 
     private DatabaseProvider databaseProvider;
     private QuestManager questManager;
@@ -121,6 +123,9 @@ public final class AliienCommunityQuests extends JavaPlugin {
             this.settings = ConfigManager.loadConfig(this, "settings.yml");
             ConfigManager.bindConfig(this.settings, Settings.class);
 
+            this.formatting = ConfigManager.loadConfig(this, "formatting.yml");
+            Formatting.load(this.formatting);
+
             return true;
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, "Failed to load or update configuration files!", e);
@@ -149,49 +154,50 @@ public final class AliienCommunityQuests extends JavaPlugin {
      * Sets up the database type based on the user input in the settings.yml file
      */
     private void setupDatabase() {
+        final String tablePrefix = settings.getString("database.table-prefix", "communityquests_");
         databaseProvider = switch (settings.getString("database.type").toUpperCase(Locale.ROOT)) {
-        case "H2" -> {
-            AliienCore.getDatabase().connectH2(this, "database");
-            yield new H2(this);
-        }
-        case "SQLITE" -> {
-            AliienCore.getDatabase().connectSQLite(this, "database");
-            yield new SQLite(this);
-        }
-        case "MYSQL" -> {
-            AliienCore.getDatabase().connectMySQL(
-                    settings.getString("database.settings.host", "localhost"),
-                    settings.getInt("database.settings.port", 3306),
-                    settings.getString("database.settings.database", "server"),
-                    settings.getString("database.settings.username", "root"),
-                    settings.getString("database.settings.password", "password"),
-                    settings.getInt("database.settings.advanced.max-pool-size", 10),
-                    settings.getInt("database.settings.advanced.min-idle", 10),
-                    settings.getLong("database.settings.advanced.connection-timeout", 10000L),
-                    settings.getLong("database.settings.advanced.max-lifetime", 1800000L)
-            );
-            yield new MySQL();
-        }
-        case "MARIADB" -> {
-            AliienCore.getDatabase().connectMariaDB(
-                    settings.getString("database.settings.host", "localhost"),
-                    settings.getInt("database.settings.port", 3306),
-                    settings.getString("database.settings.database", "server"),
-                    settings.getString("database.settings.username", "root"),
-                    settings.getString("database.settings.password", "password"),
-                    settings.getInt("database.settings.advanced.max-pool-size", 10),
-                    settings.getInt("database.settings.advanced.min-idle", 10),
-                    settings.getLong("database.settings.advanced.connection-timeout", 10000L),
-                    settings.getLong("database.settings.advanced.max-lifetime", 1800000L)
-            );
-            yield new MariaDB();
-        }
-        default -> {
-            getLogger().warning("Invalid database type detected, therefore defaulting to H2. If you are sure that you have typed your storage type correctly and this message is showing up, then this is a bug and must be reported!");
-            AliienCore.getDatabase().connectH2(this, "database");
-            yield new H2(this);
-        }
-    };
+            case "H2" -> {
+                AliienCore.getDatabase().connectH2(this, "database");
+                yield new H2(this, tablePrefix);
+            }
+            case "SQLITE" -> {
+                AliienCore.getDatabase().connectSQLite(this, "database");
+                yield new SQLite(this, tablePrefix);
+            }
+            case "MYSQL" -> {
+                AliienCore.getDatabase().connectMySQL(
+                        settings.getString("database.settings.host", "localhost"),
+                        settings.getInt("database.settings.port", 3306),
+                        settings.getString("database.settings.database", "server"),
+                        settings.getString("database.settings.username", "root"),
+                        settings.getString("database.settings.password", "password"),
+                        settings.getInt("database.settings.advanced.max-pool-size", 10),
+                        settings.getInt("database.settings.advanced.min-idle", 10),
+                        settings.getLong("database.settings.advanced.connection-timeout", 10000L),
+                        settings.getLong("database.settings.advanced.max-lifetime", 1800000L)
+                );
+                yield new MySQL(tablePrefix);
+            }
+            case "MARIADB" -> {
+                AliienCore.getDatabase().connectMariaDB(
+                        settings.getString("database.settings.host", "localhost"),
+                        settings.getInt("database.settings.port", 3306),
+                        settings.getString("database.settings.database", "server"),
+                        settings.getString("database.settings.username", "root"),
+                        settings.getString("database.settings.password", "password"),
+                        settings.getInt("database.settings.advanced.max-pool-size", 10),
+                        settings.getInt("database.settings.advanced.min-idle", 10),
+                        settings.getLong("database.settings.advanced.connection-timeout", 10000L),
+                        settings.getLong("database.settings.advanced.max-lifetime", 1800000L)
+                );
+                yield new MariaDB(tablePrefix);
+            }
+            default -> {
+                getLogger().warning("Invalid database type detected, therefore defaulting to H2. If you are sure that you have typed your storage type correctly and this message is showing up, then this is a bug and must be reported!");
+                AliienCore.getDatabase().connectH2(this, "database");
+                yield new H2(this, tablePrefix);
+            }
+        };
         this.databaseProvider.init();
     }
 
@@ -229,5 +235,11 @@ public final class AliienCommunityQuests extends JavaPlugin {
     public DatabaseProvider getDatabaseProvider() {
         return databaseProvider;
     }
-    public QuestManager getQuestManager() { return questManager; }
+
+    /**
+     * @return the quests manager
+     */
+    public QuestManager getQuestManager() {
+        return questManager;
+    }
 }

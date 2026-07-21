@@ -13,35 +13,37 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SQLite implements DatabaseProvider {
 
     private final AliienCommunityQuests plugin;
+    private final String prefix;
 
-    public SQLite(final AliienCommunityQuests plugin) {
+    public SQLite(final AliienCommunityQuests plugin, final String prefix) {
         this.plugin = plugin;
+        this.prefix = prefix;
     }
 
     @Override
     public void init() {
         String createObjectives = """
-            CREATE TABLE IF NOT EXISTS active_quest_objectives (
+            CREATE TABLE IF NOT EXISTS %sactive_quest_objectives (
                 quest_id VARCHAR(255) NOT NULL,
                 objective_id VARCHAR(255) NOT NULL,
                 progress INT NOT NULL,
                 end_time BIGINT NOT NULL,
                 PRIMARY KEY (quest_id, objective_id)
-            );""";
+            );""".formatted(prefix);
 
         String createParticipants = """
-            CREATE TABLE IF NOT EXISTS active_quest_participants (
+            CREATE TABLE IF NOT EXISTS %sactive_quest_participants (
                 quest_id VARCHAR(255) NOT NULL,
                 player_uuid VARCHAR(36) NOT NULL,
                 PRIMARY KEY (quest_id, player_uuid)
-            );""";
+            );""".formatted(prefix);
 
         String createRewards = """
-            CREATE TABLE IF NOT EXISTS unclaimed_rewards (
+            CREATE TABLE IF NOT EXISTS %sunclaimed_rewards (
                 player_uuid VARCHAR(36) NOT NULL,
                 reward_id VARCHAR(255) NOT NULL,
                 INDEX(player_uuid)
-            );""";
+            );""".formatted(prefix);
 
         AliienCore.getDatabase().executeAsync(createObjectives);
         AliienCore.getDatabase().executeAsync(createParticipants);
@@ -50,7 +52,7 @@ public class SQLite implements DatabaseProvider {
 
     @Override
     public CompletableFuture<List<String>> getPendingRewards(final UUID playerUuid) {
-        String query = "SELECT reward_id FROM unclaimed_rewards WHERE player_uuid = ?;";
+        String query = "SELECT reward_id FROM " + prefix + "unclaimed_rewards WHERE player_uuid = ?;";
 
         return AliienCore.getDatabase().queryAsync(query, rs -> {
             List<String> rewards = new ArrayList<>();
@@ -65,7 +67,7 @@ public class SQLite implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Void> grantRewards(final Set<UUID> participants, final String rewardId) {
-        String query = "INSERT INTO unclaimed_rewards (player_uuid, reward_id) VALUES (?, ?);";
+        String query = "INSERT INTO " + prefix + "unclaimed_rewards (player_uuid, reward_id) VALUES (?, ?);";
 
         List<CompletableFuture<Boolean>> futures = participants.stream()
                 .map(uuid -> AliienCore.getDatabase().executeAsync(query, uuid.toString(), rewardId))
@@ -76,16 +78,16 @@ public class SQLite implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Boolean> clearPendingRewards(final UUID playerUuid) {
-        String query = "DELETE FROM unclaimed_rewards WHERE player_uuid = ?;";
+        String query = "DELETE FROM " + prefix + "unclaimed_rewards WHERE player_uuid = ?;";
         return AliienCore.getDatabase().executeAsync(query, playerUuid.toString());
     }
 
     @Override
     public CompletableFuture<Void> saveActiveQuest(final String questId, final Map<String, Integer> objectiveProgress, final Set<UUID> participants, final long endTime) {
-        String updateProgress = "INSERT INTO active_quest_objectives (quest_id, objective_id, progress, end_time) VALUES (?, ?, ?, ?) " +
+        String updateProgress = "INSERT INTO " + prefix + "active_quest_objectives (quest_id, objective_id, progress, end_time) VALUES (?, ?, ?, ?) " +
                 "ON CONFLICT(quest_id, objective_id) DO UPDATE SET progress = excluded.progress, end_time = excluded.end_time;";
 
-        String insertParticipant = "INSERT OR IGNORE INTO active_quest_participants (quest_id, player_uuid) VALUES (?, ?);";
+        String insertParticipant = "INSERT OR IGNORE INTO " + prefix + "active_quest_participants (quest_id, player_uuid) VALUES (?, ?);";
 
         ArrayList<CompletableFuture<?>> allFutures = new ArrayList<>();
 
@@ -103,8 +105,8 @@ public class SQLite implements DatabaseProvider {
     @Override
     public CompletableFuture<Map<String, ActiveQuestState>> loadActiveCache() {
         String query = "SELECT o.quest_id, o.objective_id, o.progress, o.end_time, p.player_uuid " +
-                "FROM active_quest_objectives o " +
-                "LEFT JOIN active_quest_participants p ON o.quest_id = p.quest_id;";
+                "FROM " + prefix + "active_quest_objectives o " +
+                "LEFT JOIN " + prefix + "active_quest_participants p ON o.quest_id = p.quest_id;";
 
         return AliienCore.getDatabase().queryAsync(query, rs -> {
             Map<String, ActiveQuestState> cache = new ConcurrentHashMap<>();
@@ -135,8 +137,8 @@ public class SQLite implements DatabaseProvider {
 
     @Override
     public CompletableFuture<Boolean> clearActiveQuestBackup(final String questId) {
-        String deleteProgress = "DELETE FROM active_quest_objectives WHERE quest_id = ?;";
-        String deleteParticipants = "DELETE FROM active_quest_participants WHERE quest_id = ?;";
+        String deleteProgress = "DELETE FROM " + prefix + "active_quest_objectives WHERE quest_id = ?;";
+        String deleteParticipants = "DELETE FROM " + prefix + "active_quest_participants WHERE quest_id = ?;";
 
         CompletableFuture<Boolean> progressFuture = AliienCore.getDatabase().executeAsync(deleteProgress, questId);
         CompletableFuture<Boolean> participantsFuture = AliienCore.getDatabase().executeAsync(deleteParticipants, questId);

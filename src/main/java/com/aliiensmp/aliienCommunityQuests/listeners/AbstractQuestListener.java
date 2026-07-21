@@ -88,6 +88,8 @@ public abstract class AbstractQuestListener implements Listener {
                         for (final String reward : finalQuest.rewards()) {
                             plugin.getDatabaseProvider().grantRewards(state.participants(), reward);
                         }
+
+                        plugin.getQuestManager().generateMissingQuests();
                     });
 
                     return null;

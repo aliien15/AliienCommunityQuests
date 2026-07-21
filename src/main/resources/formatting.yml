@@ -1,0 +1,48 @@
+# ==========================================
+#         FORMATTING CONFIGURATION
+# ==========================================
+#
+# How formatting works:
+# When a quest objective is displayed to a player (e.g., "BLOCK_BREAK" for "IRON_ORE"),
+# the plugin first checks the 'targets' list at the bottom of this file.
+# If it finds a match, it will use your exact custom name for the lore/progress display.
+#
+# If the target is NOT listed, the plugin will automatically generate a formatted
+# name for it using the 'unlisted-target-format' style you choose below.
+#
+# ------------------------------------------
+# FORMATTING OPTIONS EXAMPLES (Using "DIAMOND_SWORD"):
+# ------------------------------------------
+# TITLE_CASE: "Diamond Sword" (Replaces underscores with spaces and capitalizes each word)
+# LOWERCASE:  "diamond sword" (Replaces underscores with spaces and makes everything lowercase)
+# UPPERCASE:  "DIAMOND SWORD" (Replaces underscores with spaces and makes everything uppercase)
+# SMALL_CAPS: "ᴅɪᴀᴍᴏɴᴅ ѕᴡᴏʀᴅ" (Converts to small caps characters)
+# RAW:        "DIAMOND_SWORD" (Leaves the exact Bukkit enum string untouched)
+# ------------------------------------------
+
+unlisted-target-format: "TITLE_CASE"
+
+# Define the action verb for each objective type.
+actions:
+  BLOCK_BREAK: "Mine"
+  BREEDING: "Breed"
+  CONSUMING: "Eat"
+  ITEM_CRAFT: "Craft"
+  ENCHANTING: "Enchant"
+  ENTITY_KILL: "Slay"
+  PLAYER_FISH: "Catch"
+  SMELTING: "Smelt"
+  TAMING: "Tame"
+  VILLAGER_TRADING: "Trade"
+
+# Explicitly define custom names for specific targets.
+# Format -> RAW_NAME: "Custom Name"
+# Note: Ensure you are using the exact Bukkit Material or Entity enum name as the key!
+# To not use this, set it as targets: {}
+targets:
+  DIAMOND_PICKAXE: "Diamond Pickaxe"
+  ROTTEN_FLESH: "zombie meat"
+  ZOMBIE: "Zombie"
+
+# Do not touch this
+config-version: 1

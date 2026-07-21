@@ -1,6 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.menu;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
+import com.aliiensmp.aliienCommunityQuests.config.Formatting;
 import com.aliiensmp.aliienCommunityQuests.config.MainMenu;
 import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.config.Quests;
@@ -76,7 +77,6 @@ public class Menu {
      * @ensures Static items are placed into their correct GUI slots with active, routed click handlers.
      */
     private void buildStaticLayout(AliienGUI menu, Player player, int page, int pendingCount) {
-        // Calculate max pages based on active quests
         final int totalQuests = QuestManager.ACTIVE_QUESTS.size();
         final int slotsPerPage = MainMenu.QUEST_SLOTS.size();
         int maxPages = (int) Math.ceil((double) totalQuests / slotsPerPage);
@@ -84,11 +84,9 @@ public class Menu {
 
         final int finalMaxPages = maxPages;
         MainMenu.ITEMS_LIST.forEach(item -> {
-            // Hide pagination arrows if they are a dead end
             if (item.action() == MenuAction.PREVIOUS_PAGE && page <= 1) return;
             if (item.action() == MenuAction.NEXT_PAGE && page >= finalMaxPages) return;
 
-            // Calculate %target_page%
             int targetPage = page;
             if (item.action() == MenuAction.NEXT_PAGE) {
                 targetPage = page + 1;
@@ -99,12 +97,10 @@ public class Menu {
             final String targetStr = String.valueOf(targetPage);
             final String rewardsStr = String.valueOf(pendingCount);
 
-            // Parse the name
             String parsedName = item.name()
                     .replace("%target_page%", targetStr)
                     .replace("%pending_rewards%", rewardsStr);
 
-            // Parse the lore
             List<String> parsedLore = item.lore().stream()
                     .map(line -> line
                             .replace("%target_page%", targetStr)
@@ -112,7 +108,6 @@ public class Menu {
                     )
                     .toList();
 
-            // Build the item
             ItemStack menuItem = new ItemBuilder(item.material())
                     .name(parsedName)
                     .stringLore(parsedLore)
@@ -128,7 +123,7 @@ public class Menu {
     }
 
     /**
-     * Slices the global active quests cache based on the requested page and maps 
+     * Slices the global active quests cache based on the requested page and maps
      * the mathematically appropriate quests into the designated empty GUI slots.
      *
      * @param menu The active AliienGUI instance being constructed.
@@ -140,7 +135,6 @@ public class Menu {
         final int skipAmount = (page - 1) * questSlotsPerPage;
 
         List<Map.Entry<String, ActiveQuestState>> pagedQuests = QuestManager.ACTIVE_QUESTS.entrySet().stream()
-                // Sort quests by their config priority (highest number first)
                 .sorted((entry1, entry2) -> {
                     Quest q1 = Quests.QUEST_LIST.stream().filter(q -> q.id().equals(entry1.getKey())).findFirst().orElse(null);
                     Quest q2 = Quests.QUEST_LIST.stream().filter(q -> q.id().equals(entry2.getKey())).findFirst().orElse(null);
@@ -187,7 +181,7 @@ public class Menu {
                                 .filter(objective -> state.objectiveProgress().containsKey(objective.id()))
                                 .map(objective ->
                                         questData.objectiveFormat()
-                                                .replace("%target%", objective.target())
+                                                .replace("%target%", Formatting.formatObjective(objective))
                                                 .replace("%current%", String.valueOf(state.objectiveProgress().get(objective.id())))
                                                 .replace("%amount%", String.valueOf(objective.amount()))
                                 );
@@ -198,6 +192,7 @@ public class Menu {
                     for (final Objective obj : questData.objectives()) {
                         if (state.objectiveProgress().containsKey(obj.id())) {
                             parsedLine = parsedLine
+                                    .replace("%target_" + obj.id() + "%", Formatting.formatObjective(obj))
                                     .replace("%current_" + obj.id() + "%", String.valueOf(state.objectiveProgress().get(obj.id())))
                                     .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()));
                         }
@@ -250,13 +245,11 @@ public class Menu {
         plugin.getDatabaseProvider().getPendingRewards(player.getUniqueId()).thenAccept(rewardCmds -> {
             player.getScheduler().run(plugin, task -> {
 
-                // Check if they even have rewards
                 if (rewardCmds.isEmpty()) {
                     MessageUtils.send(player, Messages.PREFIX, Messages.REWARDS_NOT_FOUND);
                     return;
                 }
 
-                // Dispatch the reward commands
                 rewardCmds.forEach(rewardCmd -> {
                     final String finalCmd = rewardCmd.replace("%player%", player.getName());
                     plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), finalCmd);
@@ -284,7 +277,6 @@ public class Menu {
 
         int maxPages =  (int) Math.ceil((double) totalQuests / slotsPerPage);
 
-        // If there are 0 active quests
         if (maxPages == 0) maxPages = 1;
 
         if (currentPage < maxPages) {
