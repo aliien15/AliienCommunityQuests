@@ -14,6 +14,8 @@ quests:
   ended: "A community quest has just ended, and unfortunately it was not completed :("
   reset: "This quest has been reset by an admin!"
   not-found: "This quest does not exist!"
+  reset-all: "All quests have been reset by an admin!"
+  none-active: "There are no active quests at the moment!"
 
 # Do not touch this
 config-version: 1

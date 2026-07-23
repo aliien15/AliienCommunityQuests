@@ -43,4 +43,10 @@ public class Messages {
 
     @Key("new-update")
     public static @NotNull String NEW_UPDATE = "A new AliienCommunityQuests update is now available!";
+
+    @Key("quests.reset-all")
+    public static @NotNull String QUEST_RESET_ALL = "All quests have been reset by an admin!";
+
+    @Key("quests.none-active")
+    public static @NotNull String QUEST_NONE_ACTIVE = "There are no active quests at the moment!";
 }
