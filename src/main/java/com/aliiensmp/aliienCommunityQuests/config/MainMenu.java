@@ -21,7 +21,7 @@ public class MainMenu {
     @Key("menu.rows")
     public static int ROWS = 3;
 
-    @Key("layout.quest-slots")
+    @Key("menu.quest-slots")
     public static @NotNull List<Integer> QUEST_SLOTS = List.of(10, 11, 12, 13, 14, 15, 16);
     
     public static final List<MenuItem> ITEMS_LIST = new ArrayList<>();

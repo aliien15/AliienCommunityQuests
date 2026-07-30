@@ -20,7 +20,7 @@ items:
     name: "<#ffb347><b>« Previous Page</b>"
     lore:
       - "&7Click to go to the"
-      - "&previosu page (%target_page%)"
+      - "&previous page (%target_page%)"
     custom-model-data: 0
     glow: false
     item-flags:

@@ -24,6 +24,9 @@ permissions:
   aliien.communityquests.admin.reset:
     description: Allows admins to forcefully wipe and skip an active quest.
     default: op
+  aliien.communityquests.admin.resetall:
+    description: Allows admins to reset all the quests at once
+    default: op
 
   # Parent Permissions
   aliien.communityquests.admin:
@@ -32,6 +35,7 @@ permissions:
     children:
       aliien.communityquests.admin.reload: true
       aliien.communityquests.admin.reset: true
+      aliien.communityquests.admin.resetall: true
 
   aliien.communityquests.*:
     description: Grants access to every permission in the plugin.
