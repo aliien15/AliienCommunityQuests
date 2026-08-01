@@ -56,15 +56,21 @@ public abstract class AbstractQuestListener implements Listener {
                     .orElse(null);
             if (quest == null) continue;
 
-            // Find the matching objective
+            // Grab the active state once so it can inspect its selected objectives
+            ActiveQuestState activeState = ACTIVE_QUESTS.get(questId);
+            if (activeState == null) continue;
+
+            // Find the matching objective, ensuring it is present in the active rotation map
             Objective targetObjective = quest.objectives().stream()
-                    .filter(obj -> obj.type() == type && obj.target().equals(target))
+                    .filter(obj -> obj.type() == type
+                            && obj.target().equals(target)
+                            && activeState.objectiveProgress().containsKey(obj.id()))
                     .findFirst()
                     .orElse(null);
             if (targetObjective == null) continue;
 
             // Check if the objective is already maxed out before updating
-            int currentPreProgress = ACTIVE_QUESTS.get(questId).objectiveProgress().getOrDefault(targetObjective.id(), 0);
+            int currentPreProgress = activeState.objectiveProgress().getOrDefault(targetObjective.id(), 0);
             if (currentPreProgress >= targetObjective.amount()) continue;
 
             final Quest finalQuest = quest;
