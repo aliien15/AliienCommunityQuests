@@ -14,6 +14,7 @@ com\aliiensmp\aliienCommunityQuests\config\records\ActiveQuestState.class
 com\aliiensmp\aliienCommunityQuests\config\Formatting.class
 com\aliiensmp\aliienCommunityQuests\config\Quests.class
 com\aliiensmp\aliienCommunityQuests\enums\TargetFormat.class
+com\aliiensmp\aliienCommunityQuests\manager\QuestManager$ActiveObjectiveContext.class
 com\aliiensmp\aliienCommunityQuests\database\options\MySQL.class
 com\aliiensmp\aliienCommunityQuests\commands\PlayerCommands.class
 com\aliiensmp\aliienCommunityQuests\config\records\MenuItem.class

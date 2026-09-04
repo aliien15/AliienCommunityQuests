@@ -41,5 +41,14 @@ status:
 # For quests revolving breaking ores, should the deepslate variations be taken in count?
 count-deepslate-ores: true
 
+# Discord Webhook integration for when a new quest starts
+discord-webhook:
+  enabled: false
+  url: "https://discord.com/api/webhooks/your-webhook-id-here"
+  embed:
+    title: "\uD83D\uDCE2 A New Community Quest Has Started!"
+    description: "Work together to complete the objectives before the time runs out!"
+    color: "#00FF00"
+
 # Do not touch this
-config-version: 1
+config-version: 2

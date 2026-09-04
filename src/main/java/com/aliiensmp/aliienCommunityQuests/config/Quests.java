@@ -12,10 +12,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Quests {
 
-    public static final @NotNull List<Quest> QUEST_LIST = new ArrayList<>();
+    public static final @NotNull List<Quest> QUEST_LIST = new CopyOnWriteArrayList<>();
 
     public static void load(YamlDocument config) {
         QUEST_LIST.clear();

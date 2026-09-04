@@ -34,4 +34,19 @@ public class Settings {
 
     @Key("count-deepslate-ores")
     public static boolean COUNT_DEEPSLATE_ORES = true;
+
+    @Key("discord-webhook.enabled")
+    public static boolean WEBHOOK_ENABLED = false;
+
+    @Key("discord-webhook.url")
+    public static @NotNull String WEBHOOK_URL = "";
+
+    @Key("discord-webhook.embed.title")
+    public static @NotNull String WEBHOOK_TITLE = "A New Community Quest Has Started!";
+
+    @Key("discord-webhook.embed.description")
+    public static @NotNull String WEBHOOK_DESCRIPTION = "Work together to complete the objectives before the time runs out!";
+
+    @Key("discord-webhook.embed.color")
+    public static @NotNull String WEBHOOK_COLOR = "#00FF00";
 }
