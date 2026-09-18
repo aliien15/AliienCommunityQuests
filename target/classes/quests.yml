@@ -1,4 +1,5 @@
 quests:
+  # Quests appear in the menu in the order they are listed here.
   # The quest ID (do NOT change this once the quest has started, otherwise it will break
   weekly-1:
     # General setting for this quest
@@ -11,9 +12,6 @@ quests:
       objectives-amount: 1
       # How rewards will be displayed in the lore using the %active_objectives% list!
       objective-format: "&8- &f%target%: %current%/%amount%"
-      # This number defines which quests will appear first when building the menu using the slots defined in the main-menu file
-      # The quests with the higher numbers will appear first
-      priority: 1
     # Any of the options in this menu section can be removed if you don't want them
     menu-options:
       # The display name in the main menu (valid placeholders: %time_left%, %status%)

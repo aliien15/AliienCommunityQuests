@@ -2,10 +2,10 @@ package com.aliiensmp.aliienCommunityQuests.menu;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.config.*;
+import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.config.records.MenuItem;
 import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
-import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.enums.MenuAction;
 import com.aliiensmp.aliienCommunityQuests.manager.QuestManager;
 import com.aliiensmp.core.items.ItemBuilder;
@@ -15,12 +15,11 @@ import com.aliiensmp.core.utils.DurationUtils;
 import com.aliiensmp.core.utils.MessageUtils;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class Menu {
@@ -42,17 +41,19 @@ public class Menu {
      * @ensures An AliienGUI is safely opened for the player on a mathematically valid page (minimum 1).
      */
     public void open(final Player player, final int requestedPage) {
-        final int page = parsePage(requestedPage);
-
         plugin.getDatabaseProvider().getPendingRewards(player.getUniqueId()).thenAccept(rewards -> {
             player.getScheduler().run(plugin, task -> {
 
                 final int pendingCount = rewards.size();
-                final String parsedTitle = MainMenu.TITLE.replace("%page%", String.valueOf(page));
-                final AliienGUI menu = new AliienGUI(parsedTitle, MainMenu.ROWS);
+                final AliienGUI menu = new AliienGUI(MainMenu.TITLE, MainMenu.ROWS);
+                final List<Integer> questSlots = new ArrayList<>(MainMenu.QUEST_SLOTS.stream().distinct().toList());
+                menu.filterInvalidSlots(questSlots);
+                final List<ClickableItem> questItems = buildActiveQuests();
+                final int maxPages = menu.getTotalPages(questSlots.size(), questItems.size());
+                final int page = menu.sanitizePage(requestedPage, maxPages);
 
-                buildStaticLayout(menu, player, page, pendingCount);
-                buildActiveQuests(menu, page);
+                buildStaticLayout(menu, player, page, maxPages, pendingCount);
+                menu.setItems(questSlots, questItems, page);
 
                 menu.open(player, page);
 
@@ -71,26 +72,21 @@ public class Menu {
      * @param menu The active AliienGUI instance being constructed.
      * @param player The player viewing the menu (captured to pass into click events).
      * @param page The current page number (captured to pass into pagination math).
+     * @param maxPages The total number of pages.
      * @param pendingCount the amount of rewards that the player is yet to claim.
      * @requires MainMenu.ITEMS_LIST is successfully loaded in memory and not empty.
      * @ensures Static items are placed into their correct GUI slots with active, routed click handlers.
      */
-    private void buildStaticLayout(AliienGUI menu, Player player, int page, int pendingCount) {
-        final int totalQuests = QuestManager.ACTIVE_QUESTS.size();
-        final int slotsPerPage = MainMenu.QUEST_SLOTS.size();
-        int maxPages = (int) Math.ceil((double) totalQuests / slotsPerPage);
-        if (maxPages == 0) maxPages = 1;
-
-        final int finalMaxPages = maxPages;
+    private void buildStaticLayout(AliienGUI menu, Player player, int page, int maxPages, int pendingCount) {
         MainMenu.ITEMS_LIST.forEach(item -> {
             if (item.action() == MenuAction.PREVIOUS_PAGE && page <= 1) return;
-            if (item.action() == MenuAction.NEXT_PAGE && page >= finalMaxPages) return;
+            if (item.action() == MenuAction.NEXT_PAGE && page >= maxPages) return;
 
             int targetPage = page;
             if (item.action() == MenuAction.NEXT_PAGE) {
                 targetPage = page + 1;
             } else if (item.action() == MenuAction.PREVIOUS_PAGE) {
-                targetPage = parsePage(page - 1);
+                targetPage = page - 1;
             }
 
             final String targetStr = String.valueOf(targetPage);
@@ -107,71 +103,40 @@ public class Menu {
                     )
                     .toList();
 
-            ItemStack menuItem = new ItemBuilder(item.material())
+            ClickableItem menuItem = new ItemBuilder(item.material())
                     .name(parsedName)
                     .stringLore(parsedLore)
                     .glow(item.glow())
                     .addFlags(item.itemFlags().toArray(new ItemFlag[0]))
                     .customModelData(item.customModelData())
-                    .build();
+                    .buildClickable(event -> handleClickEvent(item, player, page));
 
-            item.slots().forEach(slot -> menu.setItem(slot, ClickableItem.of(menuItem, event ->
-                    handleClickEvent(item, player, page)
-            )));
+            menu.setItem(item.slots(), menuItem);
         });
     }
 
     /**
-     * Slices the global active quests cache based on the requested page and maps
-     * the mathematically appropriate quests into the designated empty GUI slots.
+     * Builds the active quest items in the order defined in quests.yml.
      *
-     * @param menu The active AliienGUI instance being constructed.
-     * @param page The mathematically validated page number to display.
-     * @requires MainMenu.QUEST_SLOTS is defined in the config and contains valid integer slot numbers.
+     * @return The ordered items for AliienCore to paginate into the configured slots.
      */
-    private void buildActiveQuests(final AliienGUI menu, final int page) {
-        final int questSlotsPerPage = MainMenu.QUEST_SLOTS.size();
-        final int skipAmount = (page - 1) * questSlotsPerPage;
-
-        List<Map.Entry<String, ActiveQuestState>> pagedQuests = QuestManager.ACTIVE_QUESTS.entrySet().stream()
-                .sorted((entry1, entry2) -> {
-                    Quest q1 = Quests.QUEST_LIST.stream().filter(q -> q.id().equals(entry1.getKey())).findFirst().orElse(null);
-                    Quest q2 = Quests.QUEST_LIST.stream().filter(q -> q.id().equals(entry2.getKey())).findFirst().orElse(null);
-
-                    int priority1 = (q1 != null) ? q1.priority() : 0;
-                    int priority2 = (q2 != null) ? q2.priority() : 0;
-
-                    return Integer.compare(priority2, priority1);
-                })
-                .skip(skipAmount)
-                .limit(questSlotsPerPage)
+    private List<ClickableItem> buildActiveQuests() {
+        return Quests.QUEST_LIST.stream()
+                .flatMap(quest -> Optional.ofNullable(QuestManager.ACTIVE_QUESTS.get(quest.id()))
+                        .map(state -> createQuestItem(quest, state))
+                        .stream())
                 .toList();
-
-        for (int idx = 0; idx < pagedQuests.size(); idx++) {
-            final int slot = MainMenu.QUEST_SLOTS.get(idx);
-            final Map.Entry<String, ActiveQuestState> entry = pagedQuests.get(idx);
-
-            final Quest questData = Quests.QUEST_LIST.stream()
-                    .filter(q -> q.id().equals(entry.getKey()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (questData == null) continue;
-
-            ItemStack questItem = createQuestItem(questData, entry.getValue());
-            menu.setItem(slot, ClickableItem.empty(questItem));
-        }
     }
 
     /**
-     * Generates the dynamic visual ItemStack for a quest. This acts as the lore parser,
+     * Generates the dynamic visual item for a quest. This acts as the lore parser,
      * safely replacing real-time progress placeholders and expanding list variables natively.
      *
      * @param questData The static configuration record holding the blueprint of the quest.
      * @param state     The active database state holding the real-time progress of the quest.
-     * @return A completely constructed, localized ItemStack ready to be displayed in a GUI.
+     * @return A completely constructed, localized item ready to be displayed in a GUI.
      */
-    private ItemStack createQuestItem(Quest questData, ActiveQuestState state) {
+    private ClickableItem createQuestItem(Quest questData, ActiveQuestState state) {
 
         // Calculate the remaining time safely (preventing negative values if caught exactly at rotation)
         final long timeRemainingMillis = Math.max(0, state.endTime() - System.currentTimeMillis());
@@ -223,16 +188,7 @@ public class Menu {
                 .glow(questData.glow())
                 .stringLore(parsedLore)
                 .customModelData(questData.customModelData())
-                .build();
-    }
-
-    /**
-     * @param requestedPage the page that the player wants to open the menu on
-     * @return the page converted to a valid number (in case the number is invalid,
-     * so if it is less than zero and more than the max amount of pages)
-     */
-    private int parsePage(final int requestedPage) {
-        return Math.max(1, requestedPage);
+                .buildClickable(event -> {});
     }
 
     /**
@@ -288,16 +244,7 @@ public class Menu {
      * @param currentPage the page the player is currently viewing
      */
     private void handleNextPage(final Player player, final int currentPage) {
-        final int totalQuests = QuestManager.ACTIVE_QUESTS.size();
-        final int slotsPerPage = MainMenu.QUEST_SLOTS.size();
-
-        int maxPages =  (int) Math.ceil((double) totalQuests / slotsPerPage);
-
-        if (maxPages == 0) maxPages = 1;
-
-        if (currentPage < maxPages) {
-            open(player, currentPage + 1);
-        }
+        open(player, currentPage + 1);
     }
 
     /**

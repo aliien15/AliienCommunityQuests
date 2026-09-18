@@ -30,7 +30,6 @@ public class Quests {
                 final String duration = qSec.getString("settings.duration");
                 final int objAmount = qSec.getInt("settings.objectives-amount");
                 final String objFormat = qSec.getString("settings.objective-format");
-                final int priority = qSec.getInt("settings.priority", 99);
 
                 // Parse Menu Options
                 final String name = qSec.getString("menu-options.name");
@@ -59,7 +58,7 @@ public class Quests {
                 final List<String> rewards = qSec.getStringList("rewards");
 
                 // Construct the final Record and add it to the quests list
-                QUEST_LIST.add(new Quest(questId, duration, objAmount, objFormat, priority, name, lore, material, customModelData, glow, flags, objectives, rewards));
+                QUEST_LIST.add(new Quest(questId, duration, objAmount, objFormat, name, lore, material, customModelData, glow, flags, objectives, rewards));
             });
         });
     }

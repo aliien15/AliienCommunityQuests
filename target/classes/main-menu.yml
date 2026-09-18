@@ -5,7 +5,7 @@ menu:
   # How many rows you want the menu to have (from 1 to 6)
   rows: 3
   # The exact inventory slots where active quests will automatically populate.
-  # The plugin will sort quests by priority and fill these slots in order.
+  # Quests follow their order in quests.yml and fill these slots in the order listed.
   # If there are more quests than the slots defined here, the plugin will create multiple menu pages
   quest-slots: [10, 11, 12, 13, 14, 15, 16]
 

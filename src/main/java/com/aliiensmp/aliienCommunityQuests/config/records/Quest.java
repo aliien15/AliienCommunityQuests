@@ -10,7 +10,6 @@ public record Quest(
         String duration,
         int objectivesAmount,
         String objectiveFormat,
-        int priority,
         String name,
         List<String> lore,
         Material material,
