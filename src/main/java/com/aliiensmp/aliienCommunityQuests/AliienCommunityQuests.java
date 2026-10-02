@@ -66,7 +66,7 @@ public final class AliienCommunityQuests extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (AliienCore.getDatabase() != null && databaseProvider != null) AliienCore.getDatabase().disconnect();
+        AliienCore.shutdown();
 
         getLogger().info("AliienCommunityQuests has been disabled successfully!");
     }
