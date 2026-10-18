@@ -49,4 +49,10 @@ public class Settings {
 
     @Key("discord-webhook.embed.color")
     public static @NotNull String WEBHOOK_COLOR = "#00FF00";
+
+    @Key("contribution-percentage.enabled")
+    public static boolean CONTRIBUTION_PERCENTAGE_ENABLED = true;
+
+    @Key("contribution-percentage.amount")
+    public static double CONTRIBUTION_PERCENTAGE_AMOUNT = 2.5;
 }

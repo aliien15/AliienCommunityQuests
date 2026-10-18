@@ -108,7 +108,7 @@ public class QuestManager {
                 plugin.getDatabaseProvider().saveActiveQuest(
                         questId,
                         state.objectiveProgress(),
-                        state.participants(),
+                        state.participantsWithContributions(),
                         state.endTime()
                 );
             });
@@ -154,11 +154,11 @@ public class QuestManager {
                     .limit(quest.objectivesAmount())
                     .forEach(objective -> objectivesProgress.put(objective.id(), 0));
 
-            final Set<UUID> participants = ConcurrentHashMap.newKeySet();
+            final Map<UUID, Integer> participantsWithContributions = new ConcurrentHashMap<>();
 
-            plugin.getDatabaseProvider().saveActiveQuest(quest.id(), objectivesProgress, participants, timeInMilli);
+            plugin.getDatabaseProvider().saveActiveQuest(quest.id(), objectivesProgress, participantsWithContributions, timeInMilli);
 
-            ActiveQuestState state = new ActiveQuestState(objectivesProgress, participants, timeInMilli);
+            ActiveQuestState state = new ActiveQuestState(objectivesProgress, participantsWithContributions, timeInMilli);
             ACTIVE_QUESTS.put(quest.id(), state);
 
             MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_STARTED);

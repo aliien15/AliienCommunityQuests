@@ -56,9 +56,10 @@ public class Quests {
 
                 // Parse Rewards
                 final List<String> rewards = qSec.getStringList("rewards");
+                final List<String> topRewards = qSec.getStringList("rewards-top");
 
                 // Construct the final Record and add it to the quests list
-                QUEST_LIST.add(new Quest(questId, duration, objAmount, objFormat, name, lore, material, customModelData, glow, flags, objectives, rewards));
+                QUEST_LIST.add(new Quest(questId, duration, objAmount, objFormat, name, lore, material, customModelData, glow, flags, objectives, rewards, topRewards));
             });
         });
     }

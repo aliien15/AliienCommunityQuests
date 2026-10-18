@@ -17,6 +17,7 @@ public record Quest(
         boolean glow,
         List<ItemFlag> itemFlags,
         List<Objective> objectives,
-        List<String> rewards
+        List<String> rewards,
+        List<String> topRewards
 ) {
 }

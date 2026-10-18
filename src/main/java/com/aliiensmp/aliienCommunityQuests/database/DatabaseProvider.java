@@ -1,6 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.database;
 
 import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,7 @@ public interface DatabaseProvider {
      * @param rewardId The configuration key for the reward item.
      * @return A future completing when the batch insert finishes.
      */
-    CompletableFuture<Void> grantRewards(final Set<UUID> participants, final String rewardId);
+    CompletableFuture<Void> grantRewards(@NotNull final Set<UUID> participants, @NotNull final String rewardId);
 
     /**
      * Retrieves all unredeemed rewards for a player when they open the GUI hub.
@@ -30,7 +31,7 @@ public interface DatabaseProvider {
      * @param playerUuid The UUID of the player checking their stash.
      * @return A list of configuration keys representing their pending rewards.
      */
-    CompletableFuture<List<String>> getPendingRewards(final UUID playerUuid);
+    CompletableFuture<List<String>> getPendingRewards(@NotNull final UUID playerUuid);
 
     /**
      * Wipes a player's pending rewards from the database after a successful claim.
@@ -38,18 +39,18 @@ public interface DatabaseProvider {
      * @param playerUuid The UUID of the player who claimed their stash.
      * @return True if the deletion was successful, false otherwise.
      */
-    CompletableFuture<Boolean> clearPendingRewards(final UUID playerUuid);
+    CompletableFuture<Boolean> clearPendingRewards(@NotNull final UUID playerUuid);
 
     /**
      * Backs up the current server-wide progress on a timed interval.
      *
      * @param questId The active quest ID.
      * @param objectiveProgress The current global completion progress.
-     * @param participants The set of UUIDs currently contributing.
+     * @param participantsWithContributions The players with the amount that they contributed
      * @param endTime the time in milliseconds until the quest deadline.
      * @return A future completing when the backup is safely stored.
      */
-    CompletableFuture<Void> saveActiveQuest(final String questId, final Map<String, Integer> objectiveProgress, final Set<UUID> participants, final long endTime);
+    CompletableFuture<Void> saveActiveQuest(@NotNull final String questId, @NotNull final Map<String, Integer> objectiveProgress, @NotNull final Map<UUID, Integer> participantsWithContributions, final long endTime);
 
     /**
      * Fetches all in-progress quests and their contributors upon server startup.
@@ -64,5 +65,5 @@ public interface DatabaseProvider {
      * @param questId The ID of the quest that just reached 100%.
      * @return True if the deletion was successful, false otherwise.
      */
-    CompletableFuture<Boolean> clearActiveQuestBackup(final String questId);
+    CompletableFuture<Boolean> clearActiveQuestBackup(@NotNull final String questId);
 }

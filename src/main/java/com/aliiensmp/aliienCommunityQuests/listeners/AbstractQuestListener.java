@@ -3,6 +3,8 @@ package com.aliiensmp.aliienCommunityQuests.listeners;
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.config.Quests;
+import com.aliiensmp.aliienCommunityQuests.config.Settings;
+import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
 import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
@@ -56,10 +58,10 @@ public abstract class AbstractQuestListener implements Listener {
      *          the player is added to the participants list, and completion logic is triggered if the quest finishes.
      */
     protected void handleProgress(final UUID playerUUID, final ObjectiveType type, final String target, final int amount) {
-        Map<String, List<QuestManager.ActiveObjectiveContext>> typeMap = QuestManager.LISTENER_CACHE.get(type);
+        final Map<String, List<QuestManager.ActiveObjectiveContext>> typeMap = QuestManager.LISTENER_CACHE.get(type);
         if (typeMap == null || typeMap.isEmpty()) return;
 
-        List<QuestManager.ActiveObjectiveContext> contexts = typeMap.get(target.toUpperCase(Locale.ROOT));
+        final List<QuestManager.ActiveObjectiveContext> contexts = typeMap.get(target.toUpperCase(Locale.ROOT));
         if (contexts == null || contexts.isEmpty()) return;
 
         final List<CompletableFuture<Void>> completionFutures = new ArrayList<>();
@@ -67,12 +69,14 @@ public abstract class AbstractQuestListener implements Listener {
         for (QuestManager.ActiveObjectiveContext context : contexts) {
             ACTIVE_QUESTS.computeIfPresent(context.questId(), (id, state) -> {
 
-                int currentProgress = state.objectiveProgress().getOrDefault(context.objectiveId(), 0);
+                final int currentProgress = state.objectiveProgress().getOrDefault(context.objectiveId(), 0);
                 if (currentProgress >= context.requiredAmount()) return state;
 
-                int newProgress = Math.min(currentProgress + amount, context.requiredAmount());
+                final int newProgress = Math.min(currentProgress + amount, context.requiredAmount());
                 state.objectiveProgress().put(context.objectiveId(), newProgress);
-                state.participants().add(playerUUID);
+
+                final int addedProgress = newProgress - currentProgress;
+                state.participantsWithContributions().merge(playerUUID, addedProgress, Integer::sum);
 
                 if (isQuestCompleted(id, state)) {
                     completionFutures.add(handleQuestCompletion(id, state));
@@ -113,16 +117,14 @@ public abstract class AbstractQuestListener implements Listener {
      * Isolates the completion logic to keep the hot path clean, handling database saves and rewards.
      *
      * @param questId The ID of the completed quest.
-     * @param state   The active state containing the progress and participants.
-     * @requires questId != null && !questId.isEmpty() && state != null && !state.participants().isEmpty()
-     * @ensures A completion broadcast is sent, the quest is wiped from the database backup,
-     *          and rewards are queued for distribution (either globally or into the offline stash).
+     * @param state   The active state containing the progress and participants with contributions.
+     * @return A CompletableFuture completing when the database and reward distribution are finished.
      */
-    private CompletableFuture<Void> handleQuestCompletion(String questId, ActiveQuestState state) {
+    private CompletableFuture<Void> handleQuestCompletion(final String questId, final ActiveQuestState state) {
         MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_COMPLETED);
 
         Quest completedQuest = null;
-        for (Quest quest : Quests.QUEST_LIST) {
+        for (final Quest quest : Quests.QUEST_LIST) {
             if (!quest.id().equals(questId)) continue;
             completedQuest = quest;
             break;
@@ -131,25 +133,67 @@ public abstract class AbstractQuestListener implements Listener {
         if (completedQuest == null) return CompletableFuture.completedFuture(null);
         final Quest finalQuest = completedQuest;
 
+        final int totalQuestRequirement = finalQuest.objectives().stream()
+                .filter(objective -> state.objectiveProgress().containsKey(objective.id()))
+                .mapToInt(Objective::amount)
+                .sum();
+
+        final UUID topContributorUUID = state.participantsWithContributions().entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
         return plugin.getDatabaseProvider().clearActiveQuestBackup(questId).thenRun(() ->
                 plugin.getServer().getGlobalRegionScheduler().run(plugin, task -> {
-                    for (UUID uuid : state.participants()) {
-                        final Player player = plugin.getServer().getPlayer(uuid);
 
-                        // Handle offline players
-                        if (player == null || !player.isOnline()) {
-                            for (String reward : finalQuest.rewards()) {
-                                plugin.getDatabaseProvider().grantRewards(Collections.singleton(uuid), reward);
+                    // Distribute regular rewards based on participation percentage
+                    for (final Map.Entry<UUID, Integer> entry : state.participantsWithContributions().entrySet()) {
+                        final UUID uuid = entry.getKey();
+                        final int contribution = entry.getValue();
+
+                        if (Settings.CONTRIBUTION_PERCENTAGE_ENABLED && totalQuestRequirement > 0) {
+                            final double percentage = ((double) contribution / totalQuestRequirement) * 100.0;
+                            if (percentage < Settings.CONTRIBUTION_PERCENTAGE_AMOUNT) {
+                                continue;
                             }
-                            continue;
                         }
 
-                        // Handle online players
-                        for (String reward : finalQuest.rewards()) {
-                            final String cmd = reward.replace("%player%", player.getName());
-                            plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), cmd);
-                        }
+                        Optional.ofNullable(plugin.getServer().getPlayer(uuid))
+                                .filter(Player::isOnline)
+                                .ifPresentOrElse(
+                                        onlinePlayer -> {
+                                            for (final String reward : finalQuest.rewards()) {
+                                                final String cmd = reward.replace("%player%", onlinePlayer.getName());
+                                                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), cmd);
+                                            }
+                                        },
+                                        () -> {
+                                            for (final String reward : finalQuest.rewards()) {
+                                                plugin.getDatabaseProvider().grantRewards(Collections.singleton(uuid), reward);
+                                            }
+                                        }
+                                );
                     }
-                }));
+
+                    // Distribute top contributor rewards if configured
+                    if (topContributorUUID != null && finalQuest.topRewards() != null && !finalQuest.topRewards().isEmpty()) {
+                        Optional.ofNullable(plugin.getServer().getPlayer(topContributorUUID))
+                                .filter(Player::isOnline)
+                                .ifPresentOrElse(
+                                        topPlayer -> {
+                                            for (final String reward : finalQuest.topRewards()) {
+                                                final String cmd = reward.replace("%player%", topPlayer.getName());
+                                                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), cmd);
+                                            }
+                                        },
+                                        () -> {
+                                            for (final String reward : finalQuest.topRewards()) {
+                                                plugin.getDatabaseProvider().grantRewards(Collections.singleton(topContributorUUID), reward);
+                                            }
+                                        }
+                                );
+                    }
+                })
+        );
     }
 }
