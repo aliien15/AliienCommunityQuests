@@ -27,17 +27,17 @@ public class Quests {
                 if (qSec == null) return;
 
                 // Parse Settings
-                final String duration = qSec.getString("settings.duration");
-                final int objAmount = qSec.getInt("settings.objectives-amount");
-                final String objFormat = qSec.getString("settings.objective-format");
+                final String duration = qSec.getString("settings.duration", "7d");
+                final int objAmount = qSec.getInt("settings.objectives-amount", 1);
+                final String objFormat = qSec.getString("settings.objective-format", "&8- &f%target%: %current%/%amount%");
 
                 // Parse Menu Options
-                final String name = qSec.getString("menu-options.name");
-                final List<String> lore = qSec.getStringList("menu-options.lore");
+                final String name = qSec.getString("menu-options.name", "&d&lWeekly Quest &r&7(%time_left%)");
+                final List<String> lore = qSec.getStringList("menu-options.lore", List.of());
                 final Material material = Material.valueOf(qSec.getString("menu-options.material", "STONE"));
                 final int customModelData = qSec.getInt("menu-options.custom-model-data", 0);
                 final boolean glow = qSec.getBoolean("menu-options.glow", false);
-                final List<ItemFlag> flags = qSec.getStringList("menu-options.item-flags").stream()
+                final List<ItemFlag> flags = qSec.getStringList("menu-options.item-flags", List.of()).stream()
                         .map(ItemFlag::valueOf)
                         .toList();
 
@@ -55,8 +55,8 @@ public class Quests {
                 });
 
                 // Parse Rewards
-                final List<String> rewards = qSec.getStringList("rewards");
-                final List<String> topRewards = qSec.getStringList("rewards-top");
+                final List<String> rewards = qSec.getStringList("rewards", List.of());
+                final List<String> topRewards = qSec.getStringList("rewards-top", List.of());
 
                 // Construct the final Record and add it to the quests list
                 QUEST_LIST.add(new Quest(questId, duration, objAmount, objFormat, name, lore, material, customModelData, glow, flags, objectives, rewards, topRewards));

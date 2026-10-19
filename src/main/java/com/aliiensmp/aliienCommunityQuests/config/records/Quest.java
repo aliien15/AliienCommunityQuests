@@ -2,22 +2,24 @@ package com.aliiensmp.aliienCommunityQuests.config.records;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
+import org.checkerframework.checker.units.qual.N;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 public record Quest(
-        String id,
-        String duration,
+        @NotNull String id,
+        @NotNull String duration,
         int objectivesAmount,
-        String objectiveFormat,
-        String name,
-        List<String> lore,
-        Material material,
+        @NotNull String objectiveFormat,
+        @NotNull String name,
+        @NotNull List<String> lore,
+        @NotNull Material material,
         int customModelData,
         boolean glow,
-        List<ItemFlag> itemFlags,
-        List<Objective> objectives,
-        List<String> rewards,
-        List<String> topRewards
+        @NotNull List<ItemFlag> itemFlags,
+        @NotNull List<Objective> objectives,
+        @NotNull List<String> rewards,
+        @NotNull List<String> topRewards
 ) {
 }

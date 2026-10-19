@@ -35,26 +35,22 @@ public class MainMenu {
     public static void load(YamlDocument config) {
         ITEMS_LIST.clear();
 
-        Optional.ofNullable(config.getSection("items")).ifPresent(itemsSection -> {
-            itemsSection.getRoutesAsStrings(false).forEach(itemId -> {
-                final Section iSec = itemsSection.getSection(itemId);
-                if (iSec == null) return;
+        Optional.ofNullable(config.getSection("items")).ifPresent(itemsSection -> itemsSection.getRoutesAsStrings(false).forEach(itemId -> {
+            final Section iSec = itemsSection.getSection(itemId);
+            if (iSec == null) return;
 
-                // Parse Menu Options
-                final MenuAction action = MenuAction.valueOf(iSec.getString("action", "NONE"));
-                final Material material = Material.valueOf(iSec.getString("material", "STONE"));
-                final List<Integer> slots = iSec.getIntList("slots", List.of());
-                final String name = iSec.getString("name");
-                final List<String> lore = iSec.getStringList("lore");
-                final int customModelData = iSec.getInt("custom-model-data", 0);
-                final boolean glow = iSec.getBoolean("glow", false);
-                final List<ItemFlag> flags = iSec.getStringList("item-flags").stream()
-                        .map(ItemFlag::valueOf)
-                        .toList();
+            final MenuAction action = MenuAction.valueOf(iSec.getString("action", "NONE"));
+            final Material material = Material.valueOf(iSec.getString("material", "STONE"));
+            final List<Integer> slots = iSec.getIntList("slots", List.of());
+            final String name = iSec.getString("name", "");
+            final List<String> lore = iSec.getStringList("lore", List.of());
+            final int customModelData = iSec.getInt("custom-model-data", 0);
+            final boolean glow = iSec.getBoolean("glow", false);
+            final List<ItemFlag> flags = iSec.getStringList("item-flags").stream()
+                    .map(ItemFlag::valueOf)
+                    .toList();
 
-                // Construct the final Record and add it to the items list
-                ITEMS_LIST.add(new MenuItem(action, material, slots, name, lore, customModelData, glow, flags));
-            });
-        });
+            ITEMS_LIST.add(new MenuItem(action, material, slots, name, lore, customModelData, glow, flags));
+        }));
     }
 }

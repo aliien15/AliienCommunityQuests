@@ -9,12 +9,10 @@ import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.core.discord.DiscordWebhook;
-import com.aliiensmp.core.utils.DebugUtils;
 import com.aliiensmp.core.utils.DurationUtils;
 import com.aliiensmp.core.utils.MessageUtils;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -56,19 +54,15 @@ public class QuestManager {
             });
 
             // Correct soft-locks if the owner lowered the required objective amounts
-            cache.forEach((questId, state) -> {
-                Quests.QUEST_LIST.stream()
-                        .filter(q -> q.id().equals(questId))
-                        .findFirst()
-                        .ifPresent(blueprint -> {
-                            blueprint.objectives().forEach(obj -> {
-                                int currentProgress = state.objectiveProgress().getOrDefault(obj.id(), 0);
-                                if (currentProgress > obj.amount()) {
-                                    state.objectiveProgress().put(obj.id(), obj.amount());
-                                }
-                            });
-                        });
-            });
+            cache.forEach((questId, state) -> Quests.QUEST_LIST.stream()
+                    .filter(q -> q.id().equals(questId))
+                    .findFirst()
+                    .ifPresent(blueprint -> blueprint.objectives().forEach(obj -> {
+                        int currentProgress = state.objectiveProgress().getOrDefault(obj.id(), 0);
+                        if (currentProgress > obj.amount()) {
+                            state.objectiveProgress().put(obj.id(), obj.amount());
+                        }
+                    })));
 
             ACTIVE_QUESTS = cache;
 
@@ -86,33 +80,27 @@ public class QuestManager {
     public void rebuildListenerCache() {
         LISTENER_CACHE.values().forEach(Map::clear);
 
-        ACTIVE_QUESTS.forEach((questId, state) -> {
-            Quests.QUEST_LIST.stream()
-                    .filter(q -> q.id().equals(questId))
-                    .findFirst()
-                    .ifPresent(quest -> {
-                        quest.objectives().stream()
-                                .filter(obj -> state.objectiveProgress().containsKey(obj.id()))
-                                .forEach(obj -> {
-                                    LISTENER_CACHE.get(obj.type())
-                                            .computeIfAbsent(obj.target().toUpperCase(Locale.ROOT), k -> new CopyOnWriteArrayList<>())
-                                            .add(new ActiveObjectiveContext(questId, obj.id(), obj.amount()));
-                                });
-                    });
-        });
+        ACTIVE_QUESTS.forEach((questId, state) -> Quests.QUEST_LIST.stream()
+                .filter(q -> q.id().equals(questId))
+                .findFirst()
+                .ifPresent(quest -> quest.objectives().stream()
+                        .filter(obj -> state.objectiveProgress().containsKey(obj.id()))
+                        .forEach(obj -> LISTENER_CACHE.get(obj.type())
+                                .computeIfAbsent(obj.target().toUpperCase(Locale.ROOT), k -> new CopyOnWriteArrayList<>())
+                                .add(new ActiveObjectiveContext(questId, obj.id(), obj.amount())))));
     }
 
     private void startBackupTask() {
-        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task -> {
-            ACTIVE_QUESTS.forEach((questId, state) -> {
-                plugin.getDatabaseProvider().saveActiveQuest(
-                        questId,
-                        state.objectiveProgress(),
-                        state.participantsWithContributions(),
-                        state.endTime()
-                );
-            });
-        }, 20L, DurationUtils.toTicks(Settings.BACKUP_INTERVAL));
+        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
+                plugin,
+                task -> ACTIVE_QUESTS.forEach((questId, state) -> plugin.getDatabaseProvider().saveActiveQuest(
+                    questId,
+                    state.objectiveProgress(),
+                    state.participantsWithContributions(),
+                    state.endTime()
+                )),
+                20L,
+                DurationUtils.toTicks(Settings.BACKUP_INTERVAL));
     }
 
     private void startRotationTask() {

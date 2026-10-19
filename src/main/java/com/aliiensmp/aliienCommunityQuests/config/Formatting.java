@@ -4,6 +4,7 @@ import com.aliiensmp.aliienCommunityQuests.config.records.Objective;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.aliienCommunityQuests.enums.TargetFormat;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -12,10 +13,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Formatting {
 
-    private static final Map<ObjectiveType, String> ACTIONS = new EnumMap<>(ObjectiveType.class);
-    private static final Map<String, String> TARGETS = new ConcurrentHashMap<>();
+    private static final @NotNull Map<ObjectiveType, String> ACTIONS = new EnumMap<>(ObjectiveType.class);
+    private static final @NotNull Map<String, String> TARGETS = new ConcurrentHashMap<>();
 
-    private static TargetFormat defaultFormat = TargetFormat.TITLE_CASE;
+    private static @NotNull TargetFormat defaultFormat = TargetFormat.TITLE_CASE;
 
     public static void load(final YamlDocument config) {
         ACTIONS.clear();

@@ -41,28 +41,27 @@ public class Menu {
      * @ensures An AliienGUI is safely opened for the player on a mathematically valid page (minimum 1).
      */
     public void open(final Player player, final int requestedPage) {
-        plugin.getDatabaseProvider().getPendingRewards(player.getUniqueId()).thenAccept(rewards -> {
-            player.getScheduler().run(plugin, task -> {
+        plugin.getDatabaseProvider()
+                .getPendingRewards(player.getUniqueId())
+                .thenAccept(rewards -> player.getScheduler().run(plugin, task -> {
 
-                final int pendingCount = rewards.size();
-                final AliienGUI menu = new AliienGUI(MainMenu.TITLE, MainMenu.ROWS);
-                final List<Integer> questSlots = new ArrayList<>(MainMenu.QUEST_SLOTS.stream().distinct().toList());
-                menu.filterInvalidSlots(questSlots);
-                final List<ClickableItem> questItems = buildActiveQuests();
-                final int maxPages = menu.getTotalPages(questSlots.size(), questItems.size());
-                final int page = menu.sanitizePage(requestedPage, maxPages);
+                    final int pendingCount = rewards.size();
+                    final AliienGUI menu = new AliienGUI(MainMenu.TITLE, MainMenu.ROWS);
+                    final List<Integer> questSlots = new ArrayList<>(MainMenu.QUEST_SLOTS.stream().distinct().toList());
+                    menu.filterInvalidSlots(questSlots);
+                    final List<ClickableItem> questItems = buildActiveQuests();
+                    final int maxPages = menu.getTotalPages(questSlots.size(), questItems.size());
+                    final int page = menu.sanitizePage(requestedPage, maxPages);
 
-                buildStaticLayout(menu, player, page, maxPages, pendingCount);
-                menu.setItems(questSlots, questItems, page);
+                    buildStaticLayout(menu, player, page, maxPages, pendingCount);
+                    menu.setItems(questSlots, questItems, page);
 
-                menu.open(player, page);
+                    menu.open(player, page);
 
-            }, null);
-
-        }).exceptionally(ex -> {
-            plugin.getLogger().severe("Failed to load GUI data for " + player.getName() + ": " + ex.getMessage());
-            return null;
-        });
+                }, null)).exceptionally(ex -> {
+                    plugin.getLogger().severe("Failed to load GUI data for " + player.getName() + ": " + ex.getMessage());
+                    return null;
+                });
     }
 
     /**
@@ -201,7 +200,7 @@ public class Menu {
         switch (item.action()) {
             case NEXT_PAGE -> handleNextPage(player, page);
             case PREVIOUS_PAGE -> handlePreviousPage(player, page);
-            case REWARDS -> handleRewards(item, player, page);
+            case REWARDS -> handleRewards(player, page);
             case NONE -> {}
         }
     }
@@ -210,28 +209,24 @@ public class Menu {
      * Handles giving out the quests rewards missing for the player
      *
      * @param player player clicking the item
-     * @param item the menu item
      */
-    private void handleRewards(final MenuItem item, final Player player, final int page) {
-        plugin.getDatabaseProvider().getPendingRewards(player.getUniqueId()).thenAccept(rewardCmds -> {
-            player.getScheduler().run(plugin, task -> {
+    private void handleRewards(final Player player, final int page) {
+        plugin.getDatabaseProvider().getPendingRewards(player.getUniqueId()).thenAccept(rewardCmds -> player.getScheduler().run(plugin, task -> {
 
-                if (rewardCmds.isEmpty()) {
-                    MessageUtils.send(player, Messages.PREFIX, Messages.REWARDS_NOT_FOUND);
-                    return;
-                }
+            if (rewardCmds.isEmpty()) {
+                MessageUtils.send(player, Messages.PREFIX, Messages.REWARDS_NOT_FOUND);
+                return;
+            }
 
-                rewardCmds.forEach(rewardCmd -> {
-                    final String finalCmd = rewardCmd.replace("%player%", player.getName());
-                    plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), finalCmd);
-                });
+            rewardCmds.forEach(rewardCmd -> {
+                final String finalCmd = rewardCmd.replace("%player%", player.getName());
+                plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), finalCmd);
+            });
 
-                MessageUtils.send(player, Messages.PREFIX, Messages.REWARDS_CLAIMED);
-                plugin.getDatabaseProvider().clearPendingRewards(player.getUniqueId())
-                        .thenRun(() -> open(player, page));
-            }, null);
-
-        }).exceptionally(ex -> {
+            MessageUtils.send(player, Messages.PREFIX, Messages.REWARDS_CLAIMED);
+            plugin.getDatabaseProvider().clearPendingRewards(player.getUniqueId())
+                    .thenRun(() -> open(player, page));
+        }, null)).exceptionally(ex -> {
             plugin.getLogger().severe("Failed to load rewards for " + player.getName() + ": " + ex.getMessage());
             return null;
         });

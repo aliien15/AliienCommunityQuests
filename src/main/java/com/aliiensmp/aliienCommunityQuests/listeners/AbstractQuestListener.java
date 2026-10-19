@@ -176,7 +176,7 @@ public abstract class AbstractQuestListener implements Listener {
                     }
 
                     // Distribute top contributor rewards if configured
-                    if (topContributorUUID != null && finalQuest.topRewards() != null && !finalQuest.topRewards().isEmpty()) {
+                    if (topContributorUUID != null && !finalQuest.topRewards().isEmpty()) {
                         Optional.ofNullable(plugin.getServer().getPlayer(topContributorUUID))
                                 .filter(Player::isOnline)
                                 .ifPresentOrElse(
