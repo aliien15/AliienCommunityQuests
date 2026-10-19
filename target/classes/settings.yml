@@ -50,5 +50,14 @@ discord-webhook:
     description: "Work together to complete the objectives before the time runs out!"
     color: "#00FF00"
 
+# This allows you to define how much a player has to contribute to
+# be considered a participant/get rewards if the quest gets completed
+contribution-percentage:
+  # Toggle this feature. If set to false, everyone who contributes (even if
+  # only a contribution of a singular block break for example) gets rewards
+  enabled: true
+  # Percentage of contribution to get rewards per player, make sure this number is between 0.0 and 100.0
+  amount: 2.5
+
 # Do not touch this
-config-version: 2
+config-version: 3

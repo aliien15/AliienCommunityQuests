@@ -58,6 +58,12 @@ quests:
     rewards:
       - "eco give %player% 25000"
       - "give %player% diamond 64"
+    # These are rewards only for the player who contributed the most
+    # (Top contributor will still get the regular rewards + this)
+    # Valid placeholders: %player%
+    rewards-top:
+      - "eco give %player% 75000"
+      - "give %player% diamond_block 16"
 
 # Do not touch this
 config-version: 1
