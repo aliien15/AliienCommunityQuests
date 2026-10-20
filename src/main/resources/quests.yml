@@ -23,6 +23,7 @@ quests:
         - "&7to earn amazing rewards!"
         - ""
         - "&dStatus: %status%"
+        - "&dContribution: %contribution%%"
         - ""
         - "&dObjectives:"
         - "%active_objectives%"

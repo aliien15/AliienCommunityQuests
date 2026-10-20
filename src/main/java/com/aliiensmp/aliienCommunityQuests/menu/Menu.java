@@ -19,12 +19,14 @@ import org.bukkit.inventory.ItemFlag;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 public class Menu {
 
     private final AliienCommunityQuests plugin;
+    private record ActiveQuestEntry(Quest quest, ActiveQuestState state) {}
 
     public Menu(final AliienCommunityQuests plugin) {
         this.plugin = plugin;
@@ -49,12 +51,13 @@ public class Menu {
                     final AliienGUI menu = new AliienGUI(MainMenu.TITLE, MainMenu.ROWS);
                     final List<Integer> questSlots = new ArrayList<>(MainMenu.QUEST_SLOTS.stream().distinct().toList());
                     menu.filterInvalidSlots(questSlots);
-                    final List<ClickableItem> questItems = buildActiveQuests();
-                    final int maxPages = menu.getTotalPages(questSlots.size(), questItems.size());
+
+                    final List<ActiveQuestEntry> activeEntries = getActiveQuestEntries();
+                    final int maxPages = menu.getTotalPages(questSlots.size(), activeEntries.size());
                     final int page = menu.sanitizePage(requestedPage, maxPages);
 
                     buildStaticLayout(menu, player, page, maxPages, pendingCount);
-                    menu.setItems(questSlots, questItems, page);
+                    menu.setItems(questSlots, activeEntries, page, entry -> createQuestItem(entry.quest(), entry.state(), player));
 
                     menu.open(player, page);
 
@@ -76,33 +79,30 @@ public class Menu {
      * @requires MainMenu.ITEMS_LIST is successfully loaded in memory and not empty.
      * @ensures Static items are placed into their correct GUI slots with active, routed click handlers.
      */
-    private void buildStaticLayout(AliienGUI menu, Player player, int page, int maxPages, int pendingCount) {
+    private void buildStaticLayout(final AliienGUI menu, final Player player, final int page, final int maxPages, final int pendingCount) {
         MainMenu.ITEMS_LIST.forEach(item -> {
             if (item.action() == MenuAction.PREVIOUS_PAGE && page <= 1) return;
             if (item.action() == MenuAction.NEXT_PAGE && page >= maxPages) return;
 
-            int targetPage = page;
-            if (item.action() == MenuAction.NEXT_PAGE) {
-                targetPage = page + 1;
-            } else if (item.action() == MenuAction.PREVIOUS_PAGE) {
-                targetPage = page - 1;
-            }
-
-            final String targetStr = String.valueOf(targetPage);
+            final String targetPageStr = switch (item.action()) {
+                case NEXT_PAGE -> String.valueOf(page + 1);
+                case PREVIOUS_PAGE -> String.valueOf(page - 1);
+                default -> String.valueOf(page);
+            };
             final String rewardsStr = String.valueOf(pendingCount);
 
-            String parsedName = item.name()
-                    .replace("%target_page%", targetStr)
+            final String parsedName = item.name()
+                    .replace("%target_page%", targetPageStr)
                     .replace("%pending_rewards%", rewardsStr);
 
-            List<String> parsedLore = item.lore().stream()
+            final List<String> parsedLore = item.lore().stream()
                     .map(line -> line
-                            .replace("%target_page%", targetStr)
+                            .replace("%target_page%", targetPageStr)
                             .replace("%pending_rewards%", rewardsStr)
                     )
                     .toList();
 
-            ClickableItem menuItem = new ItemBuilder(item.material())
+            final ClickableItem menuItem = new ItemBuilder(item.material())
                     .name(parsedName)
                     .stringLore(parsedLore)
                     .glow(item.glow())
@@ -115,14 +115,14 @@ public class Menu {
     }
 
     /**
-     * Builds the active quest items in the order defined in quests.yml.
+     * Collects the active quest entries in the order defined in quests.yml without building ItemStacks upfront.
      *
-     * @return The ordered items for AliienCore to paginate into the configured slots.
+     * @return The ordered quest entries for AliienGUI to lazily paginate.
      */
-    private List<ClickableItem> buildActiveQuests() {
+    private List<ActiveQuestEntry> getActiveQuestEntries() {
         return Quests.QUEST_LIST.stream()
                 .flatMap(quest -> Optional.ofNullable(QuestManager.ACTIVE_QUESTS.get(quest.id()))
-                        .map(state -> createQuestItem(quest, state))
+                        .map(state -> new ActiveQuestEntry(quest, state))
                         .stream())
                 .toList();
     }
@@ -133,11 +133,12 @@ public class Menu {
      *
      * @param questData The static configuration record holding the blueprint of the quest.
      * @param state     The active database state holding the real-time progress of the quest.
+     * @param player    The player opening the menu
      * @return A completely constructed, localized item ready to be displayed in a GUI.
      */
-    private ClickableItem createQuestItem(Quest questData, ActiveQuestState state) {
+    private ClickableItem createQuestItem(final Quest questData, final ActiveQuestState state, final Player player) {
 
-        // Calculate the remaining time safely (preventing negative values if caught exactly at rotation)
+        // Calculate the remaining time
         final long timeRemainingMillis = Math.max(0, state.endTime() - System.currentTimeMillis());
         final String formattedTime = DurationUtils.format(
                 Duration.ofMillis(timeRemainingMillis),
@@ -149,12 +150,28 @@ public class Menu {
                 .filter(o -> state.objectiveProgress().containsKey(o.id()))
                 .allMatch(o -> state.objectiveProgress().getOrDefault(o.id(), 0) >= o.amount());
 
+        final int playerContribution = state.participantsWithContributions()
+                .getOrDefault(player.getUniqueId(), 0);
+        final int totalQuestRequirement = questData.objectives().stream()
+                .filter(o -> state.objectiveProgress().containsKey(o.id()))
+                .mapToInt(Objective::amount)
+                .sum();
+        final double contributionPercentage = totalQuestRequirement > 0
+                ? ((double) playerContribution / totalQuestRequirement) * 100.0
+                : 0.0;
+
+        final String formattedContribution = String.format(Locale.US, "%.2f", contributionPercentage);
+        final String statusString = isCompleted ? Settings.STATUS_COMPLETED : Settings.STATUS_IN_PROGRESS;
+
         final List<String> parsedLore = questData.lore().stream()
-                // Time placeholder
-                .map(line -> line.replace("%time_left%", formattedTime))
+                .map(line -> line
+                        .replace("%time_left%", formattedTime)
+                        .replace("%contribution%", formattedContribution)
+                        .replace("%status%", statusString)
+                )
                 .flatMap(line -> {
                     // Handle the expanding list placeholder
-                    if (line.contains("%active_objectives")) {
+                    if (line.contains("%active_objectives%")) {
                         return questData.objectives().stream()
                                 .filter(objective -> state.objectiveProgress().containsKey(objective.id()))
                                 .map(objective ->
@@ -165,15 +182,14 @@ public class Menu {
                                 );
                     }
 
-                    // Handle the regular ID-based placeholders, as well as status
+                    // Handle the regular ID-based placeholders
                     String parsedLine = line;
                     for (final Objective obj : questData.objectives()) {
                         if (state.objectiveProgress().containsKey(obj.id())) {
                             parsedLine = parsedLine
                                     .replace("%target_" + obj.id() + "%", Formatting.formatObjective(obj))
                                     .replace("%current_" + obj.id() + "%", String.valueOf(state.objectiveProgress().get(obj.id())))
-                                    .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()))
-                                    .replace("%status%", isCompleted ? Settings.STATUS_COMPLETED : Settings.STATUS_IN_PROGRESS);
+                                    .replace("%amount_" + obj.id() + "%", String.valueOf(obj.amount()));
                         }
                     }
 
@@ -182,7 +198,11 @@ public class Menu {
                 .toList();
 
         return new ItemBuilder(questData.material())
-                .name(questData.name().replace("%time_left%", formattedTime).replace("%status%", isCompleted ? Settings.STATUS_COMPLETED : Settings.STATUS_IN_PROGRESS))
+                .name(questData.name()
+                        .replace("%time_left%", formattedTime)
+                        .replace("%status%", statusString)
+                        .replace("%contribution%", formattedContribution)
+                )
                 .addFlags(questData.itemFlags().toArray(new ItemFlag[0]))
                 .glow(questData.glow())
                 .stringLore(parsedLore)
