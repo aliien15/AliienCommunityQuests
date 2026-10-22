@@ -28,6 +28,7 @@ com/aliiensmp/aliienCommunityQuests/listeners/TamingListener.class
 com/aliiensmp/aliienCommunityQuests/listeners/EnchantingListener.class
 com/aliiensmp/aliienCommunityQuests/database/options/MariaDB.class
 com/aliiensmp/aliienCommunityQuests/menu/Menu.class
+com/aliiensmp/aliienCommunityQuests/menu/Menu$ActiveQuestEntry.class
 com/aliiensmp/aliienCommunityQuests/config/Quests.class
 com/aliiensmp/aliienCommunityQuests/config/records/MenuItem.class
 com/aliiensmp/aliienCommunityQuests/listeners/VillagerTradingListener.class
