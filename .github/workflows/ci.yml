@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: aliien15/AliienCore
-          ref: dcbd3aa3384bfc3745f2231dea39624ee7d34684
+          ref: fc696f1e79d41d70d132c569e15fd34d110edfb3
           path: .ci/AliienCore
           persist-credentials: false
       - uses: actions/setup-java@v6

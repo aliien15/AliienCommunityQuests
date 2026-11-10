@@ -1,11 +1,17 @@
 name: AliienCommunityQuests
-version: '1.2.1'
+version: '1.2.2'
 main: com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests
 api-version: '1.21'
 folia-supported: true
 load: POSTWORLD
 softdepend: [PlaceholderAPI]
 description: Premium community quests system with Folia support and dynamic rotation.
+
+libraries:
+  - com.mysql:mysql-connector-j:26.10.0
+  - org.mariadb.jdbc:mariadb-java-client:4.0.0
+  - org.xerial:sqlite-jdbc:3.54.1.0
+  - com.h2database:h2:2.2.224
 
 permissions:
   # Player Permissions

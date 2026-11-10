@@ -13,15 +13,15 @@ public class IntegrationSmoke {
     public static void main(String[] args) throws Exception {
         var expectedDrivers =
                 Set.of(
-                        "com.aliiensmp.aliienCommunityQuests.core.lib.mysql.cj.jdbc.Driver",
-                        "com.aliiensmp.aliienCommunityQuests.core.lib.mariadb.Driver",
+                        "com.mysql.cj.jdbc.Driver",
+                        "org.mariadb.jdbc.Driver",
                         "org.h2.Driver",
                         "org.sqlite.JDBC");
         var loadedDrivers = new java.util.HashSet<String>();
         for (var driver : java.util.ServiceLoader.load(java.sql.Driver.class)) {
             if (expectedDrivers.contains(driver.getClass().getName())) {
                 check(
-                        driver.getClass()
+                        !driver.getClass()
                                 .getProtectionDomain()
                                 .getCodeSource()
                                 .getLocation()
@@ -30,12 +30,12 @@ public class IntegrationSmoke {
                                                 .getProtectionDomain()
                                                 .getCodeSource()
                                                 .getLocation()),
-                        "Driver must be loaded from the final plugin JAR");
+                        "Driver must be loaded externally, not from the plugin JAR");
                 loadedDrivers.add(driver.getClass().getName());
             }
         }
-        check(loadedDrivers.equals(expectedDrivers), "All four bundled drivers must load");
-        System.out.println("All four bundled JDBC providers loaded from the plugin JAR");
+        check(loadedDrivers.equals(expectedDrivers), "All four external drivers must load");
+        System.out.println("All four external JDBC providers loaded");
         for (boolean sqlite : new boolean[] {false, true}) {
             for (boolean legacy : new boolean[] {false, true}) {
                 var config = new HikariConfig();
