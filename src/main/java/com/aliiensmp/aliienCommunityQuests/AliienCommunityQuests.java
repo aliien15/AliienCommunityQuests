@@ -2,6 +2,7 @@ package com.aliiensmp.aliienCommunityQuests;
 
 import co.aikar.commands.MessageKeys;
 import co.aikar.commands.PaperCommandManager;
+
 import com.aliiensmp.aliienCommunityQuests.commands.AdminCommands;
 import com.aliiensmp.aliienCommunityQuests.commands.PlayerCommands;
 import com.aliiensmp.aliienCommunityQuests.config.Formatting;
@@ -20,8 +21,10 @@ import com.aliiensmp.core.AliienCore;
 import com.aliiensmp.core.config.ConfigManager;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
 import com.aliiensmp.core.utils.ColorUtils;
+import com.aliiensmp.core.utils.MessageUtils;
 import com.aliiensmp.core.utils.updatechecker.UpdateChecker;
 import com.aliiensmp.core.utils.updatechecker.UpdateNotifyListener;
+
 import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -41,27 +44,70 @@ public final class AliienCommunityQuests extends JavaPlugin {
     private DatabaseProvider databaseProvider;
     private QuestManager questManager;
 
-    private static final String UPDATE_GIST_URL = "https://gist.githubusercontent.com/aliien15/e36ae7db63b09d5127205fb9a38063e4/raw/AliienCommunityQuests.txt";
+    private static final String UPDATE_GIST_URL =
+            "https://gist.githubusercontent.com/aliien15/e36ae7db63b09d5127205fb9a38063e4/raw/AliienCommunityQuests.txt";
 
     @Override
     public void onEnable() {
-        AliienCore.init(this);
+        AliienCore.init(this, true, true, false);
 
         if (!loadConfig()) {
-            getLogger().log(Level.SEVERE, "Failed to load configurations, therefore the plugin is shutting down!");
+            getLogger()
+                    .log(
+                            Level.SEVERE,
+                            "Failed to load configurations, therefore the plugin is shutting"
+                                    + " down!");
             getServer().getPluginManager().disablePlugin(this);
+            return;
         }
 
-        setupDatabase();
-        this.questManager = new QuestManager(this);
-        registerListeners();
-        setupCommands();
+        try {
+            setupDatabase();
+            databaseProvider
+                    .init()
+                    .thenCompose(ignored -> databaseProvider.loadActiveCache())
+                    .whenComplete(
+                            (cache, error) -> {
+                                if (!isEnabled()) return;
 
-        setupUpdateChecker();
-        setupBstats();
+                                getServer()
+                                        .getGlobalRegionScheduler()
+                                        .run(
+                                                this,
+                                                task -> {
+                                                    if (error != null || cache == null) {
+                                                        getLogger()
+                                                                .log(
+                                                                        Level.SEVERE,
+                                                                        "Failed to initialize quest"
+                                                                                + " storage",
+                                                                        error);
+                                                        getServer()
+                                                                .getPluginManager()
+                                                                .disablePlugin(this);
+                                                        return;
+                                                    }
 
-        questManager.generateMissingQuests();
-        getLogger().info("AliienCommunityQuests has been enabled successfully!");
+                                                    this.questManager =
+                                                            new QuestManager(this, cache);
+
+                                                    registerListeners();
+                                                    setupCommands();
+                                                    setupUpdateChecker();
+                                                    setupBstats();
+
+                                                    questManager.generateMissingQuests();
+
+                                                    getLogger()
+                                                            .info(
+                                                                    "AliienCommunityQuests has been"
+                                                                        + " enabled successfully!");
+                                                });
+                            });
+        } catch (RuntimeException e) {
+            getLogger().log(Level.SEVERE, "Failed to connect quest storage", e);
+            getServer().getPluginManager().disablePlugin(this);
+        }
     }
 
     @Override
@@ -71,36 +117,59 @@ public final class AliienCommunityQuests extends JavaPlugin {
         getLogger().info("AliienCommunityQuests has been disabled successfully!");
     }
 
-    /**
-     * Setup bStats hook
-     */
+    /** Sends through AliienCore on each recipient's owning entity scheduler. */
+    public void broadcastQuestMessage(final String message) {
+        getServer()
+                .getOnlinePlayers()
+                .forEach(
+                        player ->
+                                player.getScheduler()
+                                        .run(
+                                                this,
+                                                task ->
+                                                        MessageUtils.send(
+                                                                player, Messages.PREFIX, message),
+                                                null));
+        getServer()
+                .getGlobalRegionScheduler()
+                .run(
+                        this,
+                        task ->
+                                MessageUtils.send(
+                                        getServer().getConsoleSender(), Messages.PREFIX, message));
+    }
+
+    /** Setup bStats hook */
     private void setupBstats() {
         Metrics metric = new Metrics(this, 32585);
     }
 
-    /**
-     * Starts the version check and join notification flow when enabled.
-     */
+    /** Starts the version check and join notification flow when enabled. */
     private void setupUpdateChecker() {
         if (!Settings.CHECK_FOR_UPDATES) return;
 
-        new UpdateChecker(this, UPDATE_GIST_URL).getVersion(version -> {
-            if (this.getPluginMeta().getVersion().equals(version)) {
-                getLogger().info("AliienCommunityQuests is up to date!");
-            } else {
-                getLogger().warning("A new update is available for AliienCommmunityQuests!");
-            }
-        });
+        new UpdateChecker(this, UPDATE_GIST_URL)
+                .getVersion(
+                        version -> {
+                            if (this.getPluginMeta().getVersion().equals(version)) {
+                                getLogger().info("AliienCommunityQuests is up to date!");
+                            } else {
+                                getLogger()
+                                        .warning(
+                                                "A new update is available for"
+                                                        + " AliienCommmunityQuests!");
+                            }
+                        });
 
-        getServer().getPluginManager().registerEvents(
-                new UpdateNotifyListener(
-                        this,
-                        UPDATE_GIST_URL,
-                        "aliien.communityquests.admin",
-                        () -> ColorUtils.color(Messages.NEW_UPDATE)
-                ),
-                this
-        );
+        getServer()
+                .getPluginManager()
+                .registerEvents(
+                        new UpdateNotifyListener(
+                                this,
+                                UPDATE_GIST_URL,
+                                "aliien.communityquests.admin",
+                                () -> ColorUtils.color(Messages.NEW_UPDATE)),
+                        this);
     }
 
     /**
@@ -133,9 +202,7 @@ public final class AliienCommunityQuests extends JavaPlugin {
         }
     }
 
-    /**
-     * Registers all the quest listeners when the plugin enables
-     */
+    /** Registers all the quest listeners when the plugin enables */
     public void registerListeners() {
         PluginManager pm = getServer().getPluginManager();
         pm.registerEvents(new BlockBreakListener(this), this);
@@ -150,79 +217,90 @@ public final class AliienCommunityQuests extends JavaPlugin {
         pm.registerEvents(new VillagerTradingListener(this), this);
     }
 
-    /**
-     * Sets up the database type based on the user input in the settings.yml file
-     */
+    /** Sets up the database type based on the user input in the settings.yml file */
     private void setupDatabase() {
         final String tablePrefix = settings.getString("database.table-prefix", "communityquests_");
-        databaseProvider = switch (settings.getString("database.type").toUpperCase(Locale.ROOT)) {
-            case "H2" -> {
-                AliienCore.getDatabase().connectH2(this, "database");
-                yield new H2(this, tablePrefix);
-            }
-            case "SQLITE" -> {
-                AliienCore.getDatabase().connectSQLite(this, "database");
-                yield new SQLite(this, tablePrefix);
-            }
-            case "MYSQL" -> {
-                AliienCore.getDatabase().connectMySQL(
-                        settings.getString("database.settings.host", "localhost"),
-                        settings.getInt("database.settings.port", 3306),
-                        settings.getString("database.settings.database", "server"),
-                        settings.getString("database.settings.username", "root"),
-                        settings.getString("database.settings.password", "password"),
-                        settings.getInt("database.settings.advanced.max-pool-size", 10),
-                        settings.getInt("database.settings.advanced.min-idle", 10),
-                        settings.getLong("database.settings.advanced.connection-timeout", 10000L),
-                        settings.getLong("database.settings.advanced.max-lifetime", 1800000L)
-                );
-                yield new MySQL(tablePrefix);
-            }
-            case "MARIADB" -> {
-                AliienCore.getDatabase().connectMariaDB(
-                        settings.getString("database.settings.host", "localhost"),
-                        settings.getInt("database.settings.port", 3306),
-                        settings.getString("database.settings.database", "server"),
-                        settings.getString("database.settings.username", "root"),
-                        settings.getString("database.settings.password", "password"),
-                        settings.getInt("database.settings.advanced.max-pool-size", 10),
-                        settings.getInt("database.settings.advanced.min-idle", 10),
-                        settings.getLong("database.settings.advanced.connection-timeout", 10000L),
-                        settings.getLong("database.settings.advanced.max-lifetime", 1800000L)
-                );
-                yield new MariaDB(tablePrefix);
-            }
-            default -> {
-                getLogger().warning("Invalid database type detected, therefore defaulting to H2. If you are sure that you have typed your storage type correctly and this message is showing up, then this is a bug and must be reported!");
-                AliienCore.getDatabase().connectH2(this, "database");
-                yield new H2(this, tablePrefix);
-            }
-        };
-        this.databaseProvider.init();
+        databaseProvider =
+                switch (settings.getString("database.type", "H2").toUpperCase(Locale.ROOT)) {
+                    case "H2" -> {
+                        AliienCore.getDatabase().connectH2(this, "database");
+                        yield new H2(this, tablePrefix);
+                    }
+                    case "SQLITE" -> {
+                        AliienCore.getDatabase().connectSQLite(this, "database");
+                        yield new SQLite(this, tablePrefix);
+                    }
+                    case "MYSQL" -> {
+                        AliienCore.getDatabase()
+                                .connectMySQL(
+                                        settings.getString("database.settings.host", "localhost"),
+                                        settings.getInt("database.settings.port", 3306),
+                                        settings.getString("database.settings.database", "server"),
+                                        settings.getString("database.settings.username", "root"),
+                                        settings.getString(
+                                                "database.settings.password", "password"),
+                                        settings.getInt(
+                                                "database.settings.advanced.max-pool-size", 10),
+                                        settings.getInt("database.settings.advanced.min-idle", 10),
+                                        settings.getLong(
+                                                "database.settings.advanced.connection-timeout",
+                                                10000L),
+                                        settings.getLong(
+                                                "database.settings.advanced.max-lifetime",
+                                                1800000L));
+                        yield new MySQL(tablePrefix);
+                    }
+                    case "MARIADB" -> {
+                        AliienCore.getDatabase()
+                                .connectMariaDB(
+                                        settings.getString("database.settings.host", "localhost"),
+                                        settings.getInt("database.settings.port", 3306),
+                                        settings.getString("database.settings.database", "server"),
+                                        settings.getString("database.settings.username", "root"),
+                                        settings.getString(
+                                                "database.settings.password", "password"),
+                                        settings.getInt(
+                                                "database.settings.advanced.max-pool-size", 10),
+                                        settings.getInt("database.settings.advanced.min-idle", 10),
+                                        settings.getLong(
+                                                "database.settings.advanced.connection-timeout",
+                                                10000L),
+                                        settings.getLong(
+                                                "database.settings.advanced.max-lifetime",
+                                                1800000L));
+                        yield new MariaDB(tablePrefix);
+                    }
+                    default -> {
+                        getLogger()
+                                .warning(
+                                        "Invalid database type detected, therefore defaulting to"
+                                            + " H2. If you are sure that you have typed your"
+                                            + " storage type correctly and this message is showing"
+                                            + " up, then this is a bug and must be reported!");
+                        AliienCore.getDatabase().connectH2(this, "database");
+                        yield new H2(this, tablePrefix);
+                    }
+                };
     }
 
-    /**
-     * Sets up the plugin commands
-     */
+    /** Sets up the plugin commands */
     private void setupCommands() {
         PaperCommandManager commandManager = new PaperCommandManager(this);
 
         // Prefix
-        commandManager.getLocales().addMessage(
-                Locale.ENGLISH,
-                MessageKeys.ERROR_PREFIX,
-                Messages.PREFIX
-        );
+        commandManager
+                .getLocales()
+                .addMessage(Locale.ENGLISH, MessageKeys.ERROR_PREFIX, Messages.PREFIX);
 
         // No perms msg
-        commandManager.getLocales().addMessage(
-                Locale.ENGLISH,
-                MessageKeys.PERMISSION_DENIED,
-                Messages.NO_PERMS
-        );
+        commandManager
+                .getLocales()
+                .addMessage(Locale.ENGLISH, MessageKeys.PERMISSION_DENIED, Messages.NO_PERMS);
 
         // Auto tab
-        commandManager.getCommandCompletions().registerCompletion("questIds", c -> QuestManager.ACTIVE_QUESTS.keySet());
+        commandManager
+                .getCommandCompletions()
+                .registerCompletion("questIds", c -> QuestManager.ACTIVE_QUESTS.keySet());
 
         // Events registerings
         commandManager.registerCommand(new PlayerCommands(this));

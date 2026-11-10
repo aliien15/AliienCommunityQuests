@@ -2,6 +2,7 @@ package com.aliiensmp.aliienCommunityQuests.listeners;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
+
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.enchantment.EnchantItemEvent;
 
@@ -16,7 +17,6 @@ public class EnchantingListener extends AbstractQuestListener {
         handleProgress(
                 event.getEnchanter().getUniqueId(),
                 ObjectiveType.ENCHANTING,
-                event.getItem().getType().name()
-        );
+                event.getItem().getType().name());
     }
 }

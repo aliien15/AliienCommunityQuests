@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    name: Formatting and file checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pre-commit==4.7.0
+      - name: Run commit checks
+        # Branch protection is local; CI also checks commits already on main.
+        env:
+          SKIP: no-commit-to-branch
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  verify:
+    name: Build and database smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check out pinned AliienCore dependency
+        uses: actions/checkout@v7
+        with:
+          repository: aliien15/AliienCore
+          ref: dcbd3aa3384bfc3745f2231dea39624ee7d34684
+          path: .ci/AliienCore
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: |
+            pom.xml
+            .ci/AliienCore/pom.xml
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install shaded AliienCore dependency
+        working-directory: .ci/AliienCore
+        run: mvn --batch-mode --no-transfer-progress -Dmaven.test.skip=true clean install
+      - name: Build and verify packaged plugin
+        run: python3 tests/run-checks.py
+      - name: Upload verified plugin JAR
+        uses: actions/upload-artifact@v7
+        with:
+          name: AliienCommunityQuests
+          path: |
+            target/AliienCommunityQuests-*.jar
+            !target/*-shaded.jar
+          if-no-files-found: error
+          retention-days: 14

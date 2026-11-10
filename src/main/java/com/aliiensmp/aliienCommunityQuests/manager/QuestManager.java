@@ -10,7 +10,6 @@ import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.core.discord.DiscordWebhook;
 import com.aliiensmp.core.utils.DurationUtils;
-import com.aliiensmp.core.utils.MessageUtils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,16 +23,18 @@ public class QuestManager {
 
     /**
      * O(1) Lookup cache for the listeners
-     * <p>
-     * In the internal map, String is the objective target (e.g. IRON_ORE) and the list is all the
-     * active objectives that match this objective type and target, allowing for quicker lookups
+     *
+     * <p>In the internal map, String is the objective target (e.g. IRON_ORE) and the list is all
+     * the active objectives that match this objective type and target, allowing for quicker lookups
      */
-    public static final EnumMap<ObjectiveType, Map<String, List<ActiveObjectiveContext>>> LISTENER_CACHE = new EnumMap<>(ObjectiveType.class);
+    public static final EnumMap<ObjectiveType, Map<String, List<ActiveObjectiveContext>>>
+            LISTENER_CACHE = new EnumMap<>(ObjectiveType.class);
 
     // Record to hold exactly what the listener needs without looking up the quest blueprint
     public record ActiveObjectiveContext(String questId, String objectiveId, int requiredAmount) {}
 
-    public QuestManager(final AliienCommunityQuests plugin) {
+    public QuestManager(
+            final AliienCommunityQuests plugin, final Map<String, ActiveQuestState> cache) {
         this.plugin = plugin;
 
         // Pre-fill the EnumMap
@@ -41,88 +42,143 @@ public class QuestManager {
             LISTENER_CACHE.put(type, new ConcurrentHashMap<>());
         }
 
-        plugin.getDatabaseProvider().loadActiveCache().thenAccept(cache -> {
+        // Identify and purge ghost quests
+        final List<String> invalidQuestIds =
+                cache.keySet().stream()
+                        .filter(
+                                questId ->
+                                        Quests.QUEST_LIST.stream()
+                                                .noneMatch(q -> q.id().equals(questId)))
+                        .toList();
 
-            // Identify and purge ghost quests
-            final List<String> invalidQuestIds = cache.keySet().stream()
-                    .filter(questId -> Quests.QUEST_LIST.stream().noneMatch(q -> q.id().equals(questId)))
-                    .toList();
+        invalidQuestIds.forEach(
+                invalidId -> {
+                    cache.remove(invalidId);
+                    plugin.getDatabaseProvider().clearActiveQuestBackup(invalidId);
+                });
 
-            invalidQuestIds.forEach(invalidId -> {
-                cache.remove(invalidId);
-                plugin.getDatabaseProvider().clearActiveQuestBackup(invalidId);
-            });
+        // Correct soft-locks if the owner lowered the required objective amounts
+        cache.forEach(
+                (questId, state) ->
+                        Quests.QUEST_LIST.stream()
+                                .filter(q -> q.id().equals(questId))
+                                .findFirst()
+                                .ifPresent(
+                                        blueprint ->
+                                                blueprint
+                                                        .objectives()
+                                                        .forEach(
+                                                                obj -> {
+                                                                    int currentProgress =
+                                                                            state.objectiveProgress()
+                                                                                    .getOrDefault(
+                                                                                            obj
+                                                                                                    .id(),
+                                                                                            0);
+                                                                    if (currentProgress
+                                                                            > obj.amount()) {
+                                                                        state.objectiveProgress()
+                                                                                .put(
+                                                                                        obj.id(),
+                                                                                        obj
+                                                                                                .amount());
+                                                                    }
+                                                                })));
 
-            // Correct soft-locks if the owner lowered the required objective amounts
-            cache.forEach((questId, state) -> Quests.QUEST_LIST.stream()
-                    .filter(q -> q.id().equals(questId))
-                    .findFirst()
-                    .ifPresent(blueprint -> blueprint.objectives().forEach(obj -> {
-                        int currentProgress = state.objectiveProgress().getOrDefault(obj.id(), 0);
-                        if (currentProgress > obj.amount()) {
-                            state.objectiveProgress().put(obj.id(), obj.amount());
-                        }
-                    })));
+        ACTIVE_QUESTS = cache;
 
-            ACTIVE_QUESTS = cache;
-
-            rebuildListenerCache();
-        });
+        rebuildListenerCache();
 
         startRotationTask();
         startBackupTask();
     }
 
     /**
-     * Wipes and rebuilds the optimized O(1) listener cache.
-     * Must be called anytime quests are generated, loaded, or removed.
+     * Wipes and rebuilds the optimized O(1) listener cache. Must be called anytime quests are
+     * generated, loaded, or removed.
      */
     public void rebuildListenerCache() {
         LISTENER_CACHE.values().forEach(Map::clear);
 
-        ACTIVE_QUESTS.forEach((questId, state) -> Quests.QUEST_LIST.stream()
-                .filter(q -> q.id().equals(questId))
-                .findFirst()
-                .ifPresent(quest -> quest.objectives().stream()
-                        .filter(obj -> state.objectiveProgress().containsKey(obj.id()))
-                        .forEach(obj -> LISTENER_CACHE.get(obj.type())
-                                .computeIfAbsent(obj.target().toUpperCase(Locale.ROOT), k -> new CopyOnWriteArrayList<>())
-                                .add(new ActiveObjectiveContext(questId, obj.id(), obj.amount())))));
+        ACTIVE_QUESTS.forEach(
+                (questId, state) ->
+                        Quests.QUEST_LIST.stream()
+                                .filter(q -> q.id().equals(questId))
+                                .findFirst()
+                                .ifPresent(
+                                        quest ->
+                                                quest.objectives().stream()
+                                                        .filter(
+                                                                obj ->
+                                                                        state.objectiveProgress()
+                                                                                .containsKey(
+                                                                                        obj.id()))
+                                                        .forEach(
+                                                                obj ->
+                                                                        LISTENER_CACHE
+                                                                                .get(obj.type())
+                                                                                .computeIfAbsent(
+                                                                                        obj.target()
+                                                                                                .toUpperCase(
+                                                                                                        Locale
+                                                                                                                .ROOT),
+                                                                                        k ->
+                                                                                                new CopyOnWriteArrayList<>())
+                                                                                .add(
+                                                                                        new ActiveObjectiveContext(
+                                                                                                questId,
+                                                                                                obj
+                                                                                                        .id(),
+                                                                                                obj
+                                                                                                        .amount())))));
     }
 
     private void startBackupTask() {
-        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                plugin,
-                task -> ACTIVE_QUESTS.forEach((questId, state) -> plugin.getDatabaseProvider().saveActiveQuest(
-                    questId,
-                    state.objectiveProgress(),
-                    state.participantsWithContributions(),
-                    state.endTime()
-                )),
-                20L,
-                DurationUtils.toTicks(Settings.BACKUP_INTERVAL));
+        plugin.getServer()
+                .getGlobalRegionScheduler()
+                .runAtFixedRate(
+                        plugin,
+                        task ->
+                                ACTIVE_QUESTS.forEach(
+                                        (questId, state) ->
+                                                plugin.getDatabaseProvider()
+                                                        .saveActiveQuest(
+                                                                questId,
+                                                                state.objectiveProgress(),
+                                                                state
+                                                                        .participantsWithContributions(),
+                                                                state.endTime())),
+                        20L,
+                        DurationUtils.toTicks(Settings.BACKUP_INTERVAL));
     }
 
     private void startRotationTask() {
-        plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task -> {
-            final long currentTime = System.currentTimeMillis();
-            boolean changed = false;
+        plugin.getServer()
+                .getGlobalRegionScheduler()
+                .runAtFixedRate(
+                        plugin,
+                        task -> {
+                            final long currentTime = System.currentTimeMillis();
+                            boolean changed = false;
 
-            for (Map.Entry<String, ActiveQuestState> entry : ACTIVE_QUESTS.entrySet()) {
-                if (entry.getValue().endTime() <= currentTime) {
-                    final String questId = entry.getKey();
+                            for (Map.Entry<String, ActiveQuestState> entry :
+                                    ACTIVE_QUESTS.entrySet()) {
+                                if (entry.getValue().endTime() <= currentTime) {
+                                    final String questId = entry.getKey();
 
-                    MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_ENDED);
-                    ACTIVE_QUESTS.remove(questId);
-                    plugin.getDatabaseProvider().clearActiveQuestBackup(questId);
-                    changed = true;
-                }
-            }
+                                    plugin.broadcastQuestMessage(Messages.QUEST_ENDED);
+                                    ACTIVE_QUESTS.remove(questId);
+                                    plugin.getDatabaseProvider().clearActiveQuestBackup(questId);
+                                    changed = true;
+                                }
+                            }
 
-            if (changed) {
-                generateMissingQuests();
-            }
-        }, 20L, 20L);
+                            if (changed) {
+                                generateMissingQuests();
+                            }
+                        },
+                        20L,
+                        20L);
     }
 
     public void generateMissingQuests() {
@@ -132,7 +188,8 @@ public class QuestManager {
             if (ACTIVE_QUESTS.containsKey(quest.id())) continue;
 
             final String timeString = quest.duration();
-            final long timeInMilli = DurationUtils.parse(timeString).toMillis() + System.currentTimeMillis();
+            final long timeInMilli =
+                    DurationUtils.parse(timeString).toMillis() + System.currentTimeMillis();
 
             final Map<String, Integer> objectivesProgress = new ConcurrentHashMap<>();
 
@@ -144,19 +201,27 @@ public class QuestManager {
 
             final Map<UUID, Integer> participantsWithContributions = new ConcurrentHashMap<>();
 
-            plugin.getDatabaseProvider().saveActiveQuest(quest.id(), objectivesProgress, participantsWithContributions, timeInMilli);
+            plugin.getDatabaseProvider()
+                    .saveActiveQuest(
+                            quest.id(),
+                            objectivesProgress,
+                            participantsWithContributions,
+                            timeInMilli);
 
-            ActiveQuestState state = new ActiveQuestState(objectivesProgress, participantsWithContributions, timeInMilli);
+            ActiveQuestState state =
+                    new ActiveQuestState(
+                            objectivesProgress, participantsWithContributions, timeInMilli);
             ACTIVE_QUESTS.put(quest.id(), state);
 
-            MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_STARTED);
+            plugin.broadcastQuestMessage(Messages.QUEST_STARTED);
             questsGenerated = true;
 
             if (!Settings.WEBHOOK_ENABLED || Settings.WEBHOOK_URL.isEmpty()) continue;
-            DiscordWebhook discordWebhook = new DiscordWebhook(Settings.WEBHOOK_URL)
-                    .setColor(Settings.WEBHOOK_COLOR)
-                    .setTitle(Settings.WEBHOOK_TITLE)
-                    .setDescription(Settings.WEBHOOK_DESCRIPTION);
+            DiscordWebhook discordWebhook =
+                    new DiscordWebhook(Settings.WEBHOOK_URL)
+                            .setColor(Settings.WEBHOOK_COLOR)
+                            .setTitle(Settings.WEBHOOK_TITLE)
+                            .setDescription(Settings.WEBHOOK_DESCRIPTION);
 
             discordWebhook.sendAsync();
         }

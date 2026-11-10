@@ -2,6 +2,7 @@ package com.aliiensmp.aliienCommunityQuests.listeners;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
+
 import org.bukkit.entity.Item;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerFishEvent;
@@ -20,8 +21,7 @@ public class PlayerFishListener extends AbstractQuestListener {
             handleProgress(
                     event.getPlayer().getUniqueId(),
                     ObjectiveType.PLAYER_FISH,
-                    caughtItem.getItemStack().getType().name()
-            );
+                    caughtItem.getItemStack().getType().name());
         }
     }
 }

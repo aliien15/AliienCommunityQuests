@@ -1,6 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.config;
 
 import com.aliiensmp.core.config.Key;
+
 import org.jetbrains.annotations.NotNull;
 
 public class Messages {
@@ -12,7 +13,8 @@ public class Messages {
     public static @NotNull String RELOAD_RELOADING = "Reloading AliienCommunityQuests...";
 
     @Key("reload.fail")
-    public static @NotNull String RELOAD_FAIL = "Failed to reload AliienCommunityQuests (check console for errors)";
+    public static @NotNull String RELOAD_FAIL =
+            "Failed to reload AliienCommunityQuests (check console for errors)";
 
     @Key("reload.success")
     public static @NotNull String RELOAD_SUCCESS = "Successfully reloaded AliienCommunityQuests!";
@@ -30,7 +32,8 @@ public class Messages {
     public static @NotNull String QUEST_COMPLETED = "A community quest has just been completed!";
 
     @Key("quests.ended")
-    public static @NotNull String QUEST_ENDED = "A community quest has just ended, and unfortunately it was not completed :(";
+    public static @NotNull String QUEST_ENDED =
+            "A community quest has just ended, and unfortunately it was not completed :(";
 
     @Key("quests.reset")
     public static @NotNull String QUEST_RESET = "This quest has been reset by an admin!";
@@ -42,7 +45,8 @@ public class Messages {
     public static @NotNull String NO_PERMS = "You do not have permission to do this!";
 
     @Key("new-update")
-    public static @NotNull String NEW_UPDATE = "A new AliienCommunityQuests update is now available!";
+    public static @NotNull String NEW_UPDATE =
+            "A new AliienCommunityQuests update is now available!";
 
     @Key("quests.reset-all")
     public static @NotNull String QUEST_RESET_ALL = "All quests have been reset by an admin!";

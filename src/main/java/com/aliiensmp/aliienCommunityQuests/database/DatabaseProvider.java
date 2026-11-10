@@ -1,6 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.database;
 
 import com.aliiensmp.aliienCommunityQuests.config.records.ActiveQuestState;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -11,10 +12,21 @@ import java.util.concurrent.CompletableFuture;
 
 public interface DatabaseProvider {
 
-    /**
-     * Startup method
-     */
-    void init();
+    /** Converts AliienCore's false SQL results into a failed batch future. */
+    static CompletableFuture<Void> requireSuccessfulWrites(
+            List<? extends CompletableFuture<Boolean>> writes) {
+        return CompletableFuture.allOf(writes.toArray(new CompletableFuture[0]))
+                .thenRun(
+                        () -> {
+                            if (writes.stream()
+                                    .anyMatch(write -> !Boolean.TRUE.equals(write.join()))) {
+                                throw new IllegalStateException("A quest database write failed");
+                            }
+                        });
+    }
+
+    /** Creates and migrates the schema; completes exceptionally on failure. */
+    CompletableFuture<Void> init();
 
     /**
      * Pushes completed quest rewards to offline/online participants.
@@ -23,7 +35,8 @@ public interface DatabaseProvider {
      * @param rewardId The configuration key for the reward item.
      * @return A future completing when the batch insert finishes.
      */
-    CompletableFuture<Void> grantRewards(@NotNull final Set<UUID> participants, @NotNull final String rewardId);
+    CompletableFuture<Void> grantRewards(
+            @NotNull final Set<UUID> participants, @NotNull final String rewardId);
 
     /**
      * Retrieves all unredeemed rewards for a player when they open the GUI hub.
@@ -50,7 +63,11 @@ public interface DatabaseProvider {
      * @param endTime the time in milliseconds until the quest deadline.
      * @return A future completing when the backup is safely stored.
      */
-    CompletableFuture<Void> saveActiveQuest(@NotNull final String questId, @NotNull final Map<String, Integer> objectiveProgress, @NotNull final Map<UUID, Integer> participantsWithContributions, final long endTime);
+    CompletableFuture<Void> saveActiveQuest(
+            @NotNull final String questId,
+            @NotNull final Map<String, Integer> objectiveProgress,
+            @NotNull final Map<UUID, Integer> participantsWithContributions,
+            final long endTime);
 
     /**
      * Fetches all in-progress quests and their contributors upon server startup.

@@ -8,6 +8,4 @@ import java.util.UUID;
 public record ActiveQuestState(
         @NotNull Map<String, Integer> objectiveProgress,
         @NotNull Map<UUID, Integer> participantsWithContributions,
-        long endTime
-) {
-}
+        long endTime) {}

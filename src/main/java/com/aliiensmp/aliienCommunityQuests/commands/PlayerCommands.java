@@ -2,8 +2,10 @@ package com.aliiensmp.aliienCommunityQuests.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
+
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.menu.Menu;
+
 import org.bukkit.entity.Player;
 
 @CommandAlias("communityquests|communityquest|cquest|cquests|cq")

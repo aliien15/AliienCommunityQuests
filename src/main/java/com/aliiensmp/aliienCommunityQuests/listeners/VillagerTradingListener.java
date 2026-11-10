@@ -2,7 +2,9 @@ package com.aliiensmp.aliienCommunityQuests.listeners;
 
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
+
 import io.papermc.paper.event.player.PlayerTradeEvent;
+
 import org.bukkit.event.EventHandler;
 
 public class VillagerTradingListener extends AbstractQuestListener {
@@ -17,7 +19,6 @@ public class VillagerTradingListener extends AbstractQuestListener {
                 event.getPlayer().getUniqueId(),
                 ObjectiveType.VILLAGER_TRADING,
                 event.getTrade().getResult().getType().name(),
-                event.getTrade().getResult().getAmount()
-        );
+                event.getTrade().getResult().getAmount());
     }
 }

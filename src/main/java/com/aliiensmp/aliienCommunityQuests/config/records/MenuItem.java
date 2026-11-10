@@ -1,6 +1,7 @@
 package com.aliiensmp.aliienCommunityQuests.config.records;
 
 import com.aliiensmp.aliienCommunityQuests.enums.MenuAction;
+
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +16,4 @@ public record MenuItem(
         @NotNull List<String> lore,
         int customModelData,
         boolean glow,
-        @NotNull List<ItemFlag> itemFlags
-) {
-}
+        @NotNull List<ItemFlag> itemFlags) {}

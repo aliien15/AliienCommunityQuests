@@ -2,10 +2,12 @@ package com.aliiensmp.aliienCommunityQuests.commands;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
+
 import com.aliiensmp.aliienCommunityQuests.AliienCommunityQuests;
 import com.aliiensmp.aliienCommunityQuests.config.Messages;
 import com.aliiensmp.aliienCommunityQuests.manager.QuestManager;
 import com.aliiensmp.core.utils.MessageUtils;
+
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -26,27 +28,33 @@ public class AdminCommands extends BaseCommand {
     public void onReload(final CommandSender sender) {
         MessageUtils.send(sender, Messages.PREFIX, Messages.RELOAD_RELOADING);
 
-        CompletableFuture.runAsync(() -> {
-            boolean success = plugin.loadConfig();
+        CompletableFuture.runAsync(
+                () -> {
+                    boolean success = plugin.loadConfig();
 
-            if (success) {
-                plugin.getQuestManager().rebuildListenerCache();
-            }
+                    if (success) {
+                        plugin.getQuestManager().rebuildListenerCache();
+                    }
 
-            Runnable task = () -> {
-                if (success) {
-                    MessageUtils.send(sender, Messages.PREFIX, Messages.RELOAD_SUCCESS);
-                } else {
-                    MessageUtils.send(sender, Messages.PREFIX, Messages.RELOAD_FAIL);
-                }
-            };
+                    Runnable task =
+                            () -> {
+                                if (success) {
+                                    MessageUtils.send(
+                                            sender, Messages.PREFIX, Messages.RELOAD_SUCCESS);
+                                } else {
+                                    MessageUtils.send(
+                                            sender, Messages.PREFIX, Messages.RELOAD_FAIL);
+                                }
+                            };
 
-            if (sender instanceof Player player) {
-                player.getScheduler().run(plugin, scheduledTask -> task.run(), null);
-            } else {
-                plugin.getServer().getGlobalRegionScheduler().run(plugin, scheduledTask -> task.run());
-            }
-        });
+                    if (sender instanceof Player player) {
+                        player.getScheduler().run(plugin, scheduledTask -> task.run(), null);
+                    } else {
+                        plugin.getServer()
+                                .getGlobalRegionScheduler()
+                                .run(plugin, scheduledTask -> task.run());
+                    }
+                });
     }
 
     @Subcommand("admin reset")
@@ -63,10 +71,17 @@ public class AdminCommands extends BaseCommand {
         QuestManager.ACTIVE_QUESTS.remove(questId);
         plugin.getQuestManager().rebuildListenerCache();
 
-        plugin.getDatabaseProvider().clearActiveQuestBackup(questId)
-                .thenRun(() -> plugin.getServer().getGlobalRegionScheduler().run(plugin, task ->
-                        plugin.getQuestManager().generateMissingQuests()
-                ));
+        plugin.getDatabaseProvider()
+                .clearActiveQuestBackup(questId)
+                .thenRun(
+                        () ->
+                                plugin.getServer()
+                                        .getGlobalRegionScheduler()
+                                        .run(
+                                                plugin,
+                                                task ->
+                                                        plugin.getQuestManager()
+                                                                .generateMissingQuests()));
     }
 
     @Subcommand("admin resetall")
@@ -83,11 +98,18 @@ public class AdminCommands extends BaseCommand {
         plugin.getQuestManager().rebuildListenerCache();
 
         MessageUtils.broadcast(Messages.PREFIX, Messages.QUEST_RESET_ALL);
-        CompletableFuture.allOf(activeIds.stream()
-                .map(id -> plugin.getDatabaseProvider().clearActiveQuestBackup(id))
-                .toArray(CompletableFuture[]::new)
-        ).thenRun(() -> plugin.getServer().getGlobalRegionScheduler().run(plugin, task ->
-                plugin.getQuestManager().generateMissingQuests()
-        ));
+        CompletableFuture.allOf(
+                        activeIds.stream()
+                                .map(id -> plugin.getDatabaseProvider().clearActiveQuestBackup(id))
+                                .toArray(CompletableFuture[]::new))
+                .thenRun(
+                        () ->
+                                plugin.getServer()
+                                        .getGlobalRegionScheduler()
+                                        .run(
+                                                plugin,
+                                                task ->
+                                                        plugin.getQuestManager()
+                                                                .generateMissingQuests()));
     }
 }

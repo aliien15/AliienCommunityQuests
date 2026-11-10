@@ -5,6 +5,7 @@ import com.aliiensmp.aliienCommunityQuests.config.records.Quest;
 import com.aliiensmp.aliienCommunityQuests.enums.ObjectiveType;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
 import com.aliiensmp.core.lib.boostedyaml.block.implementation.Section;
+
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.jetbrains.annotations.NotNull;
@@ -21,46 +22,113 @@ public class Quests {
     public static void load(YamlDocument config) {
         QUEST_LIST.clear();
 
-        Optional.ofNullable(config.getSection("quests")).ifPresent(questsSection -> {
-            questsSection.getRoutesAsStrings(false).forEach(questId -> {
-                final Section qSec = questsSection.getSection(questId);
-                if (qSec == null) return;
+        Optional.ofNullable(config.getSection("quests"))
+                .ifPresent(
+                        questsSection -> {
+                            questsSection
+                                    .getRoutesAsStrings(false)
+                                    .forEach(
+                                            questId -> {
+                                                final Section qSec =
+                                                        questsSection.getSection(questId);
+                                                if (qSec == null) return;
 
-                // Parse Settings
-                final String duration = qSec.getString("settings.duration", "7d");
-                final int objAmount = qSec.getInt("settings.objectives-amount", 1);
-                final String objFormat = qSec.getString("settings.objective-format", "&8- &f%target%: %current%/%amount%");
+                                                // Parse Settings
+                                                final String duration =
+                                                        qSec.getString("settings.duration", "7d");
+                                                final int objAmount =
+                                                        qSec.getInt(
+                                                                "settings.objectives-amount", 1);
+                                                final String objFormat =
+                                                        qSec.getString(
+                                                                "settings.objective-format",
+                                                                "&8- &f%target%:"
+                                                                        + " %current%/%amount%");
 
-                // Parse Menu Options
-                final String name = qSec.getString("menu-options.name", "&d&lWeekly Quest &r&7(%time_left%)");
-                final List<String> lore = qSec.getStringList("menu-options.lore", List.of());
-                final Material material = Material.valueOf(qSec.getString("menu-options.material", "STONE"));
-                final int customModelData = qSec.getInt("menu-options.custom-model-data", 0);
-                final boolean glow = qSec.getBoolean("menu-options.glow", false);
-                final List<ItemFlag> flags = qSec.getStringList("menu-options.item-flags", List.of()).stream()
-                        .map(ItemFlag::valueOf)
-                        .toList();
+                                                // Parse Menu Options
+                                                final String name =
+                                                        qSec.getString(
+                                                                "menu-options.name",
+                                                                "&d&lWeekly Quest"
+                                                                        + " &r&7(%time_left%)");
+                                                final List<String> lore =
+                                                        qSec.getStringList(
+                                                                "menu-options.lore", List.of());
+                                                final Material material =
+                                                        Material.valueOf(
+                                                                qSec.getString(
+                                                                        "menu-options.material",
+                                                                        "STONE"));
+                                                final int customModelData =
+                                                        qSec.getInt(
+                                                                "menu-options.custom-model-data",
+                                                                0);
+                                                final boolean glow =
+                                                        qSec.getBoolean("menu-options.glow", false);
+                                                final List<ItemFlag> flags =
+                                                        qSec
+                                                                .getStringList(
+                                                                        "menu-options.item-flags",
+                                                                        List.of())
+                                                                .stream()
+                                                                .map(ItemFlag::valueOf)
+                                                                .toList();
 
-                // Parse Objectives
-                final List<Objective> objectives = new ArrayList<>();
-                Optional.ofNullable(qSec.getSection("objectives")).ifPresent(objSec -> {
-                    objSec.getRoutesAsStrings(false).forEach(objId -> {
-                        objectives.add(new Objective(
-                                objId,
-                                ObjectiveType.valueOf(objSec.getString(objId + ".type")),
-                                objSec.getString(objId + ".target"),
-                                objSec.getInt(objId + ".amount")
-                        ));
-                    });
-                });
+                                                // Parse Objectives
+                                                final List<Objective> objectives =
+                                                        new ArrayList<>();
+                                                Optional.ofNullable(qSec.getSection("objectives"))
+                                                        .ifPresent(
+                                                                objSec -> {
+                                                                    objSec.getRoutesAsStrings(false)
+                                                                            .forEach(
+                                                                                    objId -> {
+                                                                                        objectives
+                                                                                                .add(
+                                                                                                        new Objective(
+                                                                                                                objId,
+                                                                                                                ObjectiveType
+                                                                                                                        .valueOf(
+                                                                                                                                objSec
+                                                                                                                                        .getString(
+                                                                                                                                                objId
+                                                                                                                                                        + ".type")),
+                                                                                                                objSec
+                                                                                                                        .getString(
+                                                                                                                                objId
+                                                                                                                                        + ".target"),
+                                                                                                                objSec
+                                                                                                                        .getInt(
+                                                                                                                                objId
+                                                                                                                                        + ".amount")));
+                                                                                    });
+                                                                });
 
-                // Parse Rewards
-                final List<String> rewards = qSec.getStringList("rewards", List.of());
-                final List<String> topRewards = qSec.getStringList("rewards-top", List.of());
+                                                // Parse Rewards
+                                                final List<String> rewards =
+                                                        qSec.getStringList("rewards", List.of());
+                                                final List<String> topRewards =
+                                                        qSec.getStringList(
+                                                                "rewards-top", List.of());
 
-                // Construct the final Record and add it to the quests list
-                QUEST_LIST.add(new Quest(questId, duration, objAmount, objFormat, name, lore, material, customModelData, glow, flags, objectives, rewards, topRewards));
-            });
-        });
+                                                // Construct the final Record and add it to the
+                                                // quests list
+                                                QUEST_LIST.add(
+                                                        new Quest(
+                                                                questId,
+                                                                duration,
+                                                                objAmount,
+                                                                objFormat,
+                                                                name,
+                                                                lore,
+                                                                material,
+                                                                customModelData,
+                                                                glow,
+                                                                flags,
+                                                                objectives,
+                                                                rewards,
+                                                                topRewards));
+                                            });
+                        });
     }
 }

@@ -5,6 +5,7 @@ import com.aliiensmp.aliienCommunityQuests.enums.MenuAction;
 import com.aliiensmp.core.config.Key;
 import com.aliiensmp.core.lib.boostedyaml.YamlDocument;
 import com.aliiensmp.core.lib.boostedyaml.block.implementation.Section;
+
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.jetbrains.annotations.NotNull;
@@ -27,30 +28,59 @@ public class MainMenu {
     public static final List<MenuItem> ITEMS_LIST = new ArrayList<>();
 
     /**
-     * Loads all the menu items into the {@code ITEMS_LIST} so it can be rapidly used
-     * when we have to open the menu for players.
+     * Loads all the menu items into the {@code ITEMS_LIST} so it can be rapidly used when we have
+     * to open the menu for players.
      *
      * @param config the yml config file where we can find the menu items
      */
     public static void load(YamlDocument config) {
         ITEMS_LIST.clear();
 
-        Optional.ofNullable(config.getSection("items")).ifPresent(itemsSection -> itemsSection.getRoutesAsStrings(false).forEach(itemId -> {
-            final Section iSec = itemsSection.getSection(itemId);
-            if (iSec == null) return;
+        Optional.ofNullable(config.getSection("items"))
+                .ifPresent(
+                        itemsSection ->
+                                itemsSection
+                                        .getRoutesAsStrings(false)
+                                        .forEach(
+                                                itemId -> {
+                                                    final Section iSec =
+                                                            itemsSection.getSection(itemId);
+                                                    if (iSec == null) return;
 
-            final MenuAction action = MenuAction.valueOf(iSec.getString("action", "NONE"));
-            final Material material = Material.valueOf(iSec.getString("material", "STONE"));
-            final List<Integer> slots = iSec.getIntList("slots", List.of());
-            final String name = iSec.getString("name", "");
-            final List<String> lore = iSec.getStringList("lore", List.of());
-            final int customModelData = iSec.getInt("custom-model-data", 0);
-            final boolean glow = iSec.getBoolean("glow", false);
-            final List<ItemFlag> flags = iSec.getStringList("item-flags").stream()
-                    .map(ItemFlag::valueOf)
-                    .toList();
+                                                    final MenuAction action =
+                                                            MenuAction.valueOf(
+                                                                    iSec.getString(
+                                                                            "action", "NONE"));
+                                                    final Material material =
+                                                            Material.valueOf(
+                                                                    iSec.getString(
+                                                                            "material", "STONE"));
+                                                    final List<Integer> slots =
+                                                            iSec.getIntList("slots", List.of());
+                                                    final String name = iSec.getString("name", "");
+                                                    final List<String> lore =
+                                                            iSec.getStringList("lore", List.of());
+                                                    final int customModelData =
+                                                            iSec.getInt("custom-model-data", 0);
+                                                    final boolean glow =
+                                                            iSec.getBoolean("glow", false);
+                                                    final List<ItemFlag> flags =
+                                                            iSec
+                                                                    .getStringList("item-flags")
+                                                                    .stream()
+                                                                    .map(ItemFlag::valueOf)
+                                                                    .toList();
 
-            ITEMS_LIST.add(new MenuItem(action, material, slots, name, lore, customModelData, glow, flags));
-        }));
+                                                    ITEMS_LIST.add(
+                                                            new MenuItem(
+                                                                    action,
+                                                                    material,
+                                                                    slots,
+                                                                    name,
+                                                                    lore,
+                                                                    customModelData,
+                                                                    glow,
+                                                                    flags));
+                                                }));
     }
 }

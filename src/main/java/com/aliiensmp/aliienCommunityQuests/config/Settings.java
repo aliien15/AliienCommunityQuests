@@ -2,6 +2,7 @@ package com.aliiensmp.aliienCommunityQuests.config;
 
 import com.aliiensmp.core.config.Key;
 import com.aliiensmp.core.utils.DurationUtils;
+
 import org.jetbrains.annotations.NotNull;
 
 public class Settings {
@@ -45,7 +46,8 @@ public class Settings {
     public static @NotNull String WEBHOOK_TITLE = "A New Community Quest Has Started!";
 
     @Key("discord-webhook.embed.description")
-    public static @NotNull String WEBHOOK_DESCRIPTION = "Work together to complete the objectives before the time runs out!";
+    public static @NotNull String WEBHOOK_DESCRIPTION =
+            "Work together to complete the objectives before the time runs out!";
 
     @Key("discord-webhook.embed.color")
     public static @NotNull String WEBHOOK_COLOR = "#00FF00";

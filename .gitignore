@@ -1,0 +1,10 @@
+# Build outputs and generated Maven metadata
+/target/
+/dependency-reduced-pom.xml
+
+# IDE and Python local files
+/.idea/
+*.iml
+__pycache__/
+*.py[cod]
+.venv/
